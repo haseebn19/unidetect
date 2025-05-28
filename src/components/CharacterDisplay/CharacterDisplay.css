@@ -1,0 +1,226 @@
+.result-container {
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    min-height: 120px;
+    color: #333;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-family: 'Courier New', Courier, monospace;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.result-container span {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    font-family: inherit;
+}
+
+.hidden-char-group {
+    display: inline-flex;
+    gap: 2px;
+    margin: 0 2px;
+}
+
+.hidden-char-group .hidden-char {
+    margin: 0;
+}
+
+.hidden-char {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 2px;
+}
+
+.hidden-char span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.hidden-char.hidden span {
+    background-color: #ffd700;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hidden-char.newline span {
+    background-color: #e2e8f0;
+    color: #4a5568;
+    font-weight: normal;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hidden-char:hover span {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.hidden-char.hidden:hover span {
+    background-color: #ffc800;
+}
+
+.hidden-char.newline:hover span {
+    background-color: #cbd5e0;
+}
+
+.hidden-char:active span {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hidden-char:hover::after {
+    content: attr(title);
+    position: fixed;
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    z-index: 9000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    margin-top: -8px;
+}
+
+.summary-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 2rem;
+    backdrop-filter: blur(10px);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.summary-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.summary-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.summary-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.summary-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.summary-header:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.summary-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 1.25rem;
+    flex: 1;
+}
+
+.summary-toggle {
+    color: #fff;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    opacity: 0.8;
+    transition: all 0.2s ease;
+    transform-origin: center;
+}
+
+.summary-toggle.expanded {
+    transform: rotate(180deg);
+}
+
+.summary-content {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: all 0.3s ease-out;
+}
+
+.summary-content.expanded {
+    max-height: none;
+    opacity: 1;
+    padding-top: 1rem;
+}
+
+.summary-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.summary-container li {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.summary-container li::before {
+    content: '⚠';
+    display: inline-block;
+    background-color: #ffd700;
+    color: #000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-container li.newline::before {
+    content: '↵';
+    background-color: #e2e8f0;
+    color: #4a5568;
+    font-weight: normal;
+}
+
+.summary-container li:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}

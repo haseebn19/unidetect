@@ -1,0 +1,74 @@
+/**
+ * Main container styles
+ */
+.UniDetect {
+    text-align: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1c2e 0%, #283447 100%);
+    padding: 2rem;
+}
+
+/**
+ * Header section styles
+ */
+.UniDetect-header {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: white;
+    padding-bottom: 60px;
+}
+
+.UniDetect-header h1 {
+    font-size: 2.8rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/**
+ * Main content container
+ */
+.input-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    margin-bottom: 2rem;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+/**
+ * Footer styles
+ */
+.privacy-notice {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: center;
+    z-index: 10000;
+}
+
+.privacy-notice p {
+    margin: 0;
+    color: #fff;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
