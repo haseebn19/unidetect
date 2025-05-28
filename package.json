@@ -2,7 +2,7 @@
   "name": "hidden-unicode",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://haseebn19.github.io/",
+  "homepage": "https://haseebn19.github.io/hidden-unicode",
   "dependencies": {
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
