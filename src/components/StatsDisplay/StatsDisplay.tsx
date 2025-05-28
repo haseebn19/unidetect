@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {memo} from 'react';
 import {TextStats} from '../../types';
 import './StatsDisplay.css';
 
@@ -13,7 +13,7 @@ interface StatsDisplayProps {
  * Component for displaying text analysis statistics
  * Shows character counts, visible/hidden characters, spaces, and byte size
  */
-export const StatsDisplay: React.FC<StatsDisplayProps> = ({stats}) => {
+const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
     return (
         <div className="stats-container">
             <div className="stat-item">
@@ -42,4 +42,6 @@ export const StatsDisplay: React.FC<StatsDisplayProps> = ({stats}) => {
             </div>
         </div>
     );
-}; 
+};
+
+export const StatsDisplay = memo(StatsDisplayComponent);

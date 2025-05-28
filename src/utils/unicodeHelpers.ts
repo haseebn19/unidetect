@@ -12,9 +12,11 @@ export const detectHiddenChars = (input: string): HiddenChar[] => {
     for (let i = 0; i < chars.length; i++) {
         const char = chars[i];
         const code = char.codePointAt(0);
-        if (!code) continue;
+        if (!code) {
+            continue;
+        }
 
-        // Handle newline characters
+        // Handle newline characters individually
         if (char === '\r' || char === '\n') {
             hidden.push({
                 char,
@@ -25,10 +27,7 @@ export const detectHiddenChars = (input: string): HiddenChar[] => {
             continue;
         }
 
-        // Check for non-printable characters using Unicode properties
-        const isPrintable = char.match(/^[\p{L}\p{M}\p{N}\p{P}\p{S}\p{Z}]$/u) && char !== '\u200B';
-
-        if (!isPrintable || (code >= 0x2060 && code <= 0x2064)) {
+        if (isHiddenCharacter(char, code)) {
             const codeName = getUnicodeCodeName(code);
             hidden.push({
                 char,
@@ -40,6 +39,25 @@ export const detectHiddenChars = (input: string): HiddenChar[] => {
     }
 
     return hidden;
+};
+
+/**
+ * Check for hidden characters
+ * @param char The character to check
+ * @param code The Unicode code point
+ * @returns True if the character is hidden/non-printable
+ */
+const isHiddenCharacter = (char: string, code: number): boolean => {
+    if (code >= 0x2060 && code <= 0x2064) return true;
+    if (char === '\u200B') return true;
+    if (code === 0xFEFF) return true;
+
+    if ((code >= 0x00 && code <= 0x1F) || (code >= 0x7F && code <= 0x9F)) {
+        return code !== 0x09 && code !== 0x0A && code !== 0x0D;
+    }
+
+    // Check for other non-printable using regex (more expensive, so do last)
+    return !char.match(/^[\p{L}\p{M}\p{N}\p{P}\p{S}\p{Z}]$/u);
 };
 
 /**
@@ -61,4 +79,4 @@ export const getUnicodeCodeName = (code: number): string => {
         case 0xFEFF: return 'Byte Order Mark (U+FEFF)';
         default: return `U+${codeHex}`;
     }
-}; 
+};

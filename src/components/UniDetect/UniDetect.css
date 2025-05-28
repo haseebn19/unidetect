@@ -6,6 +6,10 @@
     min-height: 100vh;
     background: linear-gradient(135deg, #1a1c2e 0%, #283447 100%);
     padding: 2rem;
+    /* Prevent overscroll bounce behavior */
+    overscroll-behavior: none;
+    overflow-x: hidden;
+    position: relative;
 }
 
 /**

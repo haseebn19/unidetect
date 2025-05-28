@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, memo} from 'react';
 import {MessageType} from '../../types';
 import './FileUpload.css';
 
@@ -23,7 +23,7 @@ interface FileUploadProps {
  * Component for text input and file upload handling
  * Supports direct text input, paste operations, and file drag-and-drop
  */
-export const FileUpload: React.FC<FileUploadProps> = ({
+const FileUploadComponent: React.FC<FileUploadProps> = ({
     text,
     isProcessing,
     isDragging,
@@ -88,4 +88,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             </div>
         </div>
     );
-}; 
+};
+
+export const FileUpload = memo(FileUploadComponent);

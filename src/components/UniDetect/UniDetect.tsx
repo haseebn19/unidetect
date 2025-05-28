@@ -1,6 +1,6 @@
 import React, {useCallback, useState} from 'react';
-import {useUnicodeDetection} from '../../hooks/useUnicodeDetection';
-import {useFileProcessing} from '../../hooks/useFileProcessing';
+import {useTextProcessor} from '../../hooks/useTextProcessor';
+import {useFileExtraction} from '../../hooks/useFileExtraction';
 import {StatsDisplay} from '../StatsDisplay/StatsDisplay';
 import {CharacterDisplay} from '../CharacterDisplay/CharacterDisplay';
 import {FileUpload} from '../FileUpload/FileUpload';
@@ -16,19 +16,19 @@ export const UniDetect: React.FC = () => {
         text,
         hiddenChars,
         textStats,
-        handleTextChange,
-        cleanText
-    } = useUnicodeDetection();
+        handleTextInput,
+        cleanTextContent
+    } = useTextProcessor();
 
     const {
-        isProcessing,
+        isExtracting,
         isDragging,
         statusMessage,
         messageType,
         handleDragOver,
         handleDragLeave,
         handleDrop
-    } = useFileProcessing();
+    } = useFileExtraction();
 
     const [cleanMessage, setCleanMessage] = useState<string>('');
     const [cleanMessageType, setCleanMessageType] = useState<MessageType>('info');
@@ -38,7 +38,7 @@ export const UniDetect: React.FC = () => {
      * Automatically copies cleaned text to clipboard
      */
     const handleCleanText = useCallback(async () => {
-        const hiddenCount = hiddenChars.filter(char => char.type === 'hidden').length;
+        const hiddenCount = hiddenChars.filter((char) => char.type === 'hidden').length;
 
         if (hiddenCount === 0) {
             setCleanMessageType('info');
@@ -46,8 +46,8 @@ export const UniDetect: React.FC = () => {
             return;
         }
 
-        const cleanedText = cleanText();
-        handleTextChange(cleanedText);
+        const cleanedText = cleanTextContent();
+        handleTextInput(cleanedText);
 
         try {
             await navigator.clipboard.writeText(cleanedText);
@@ -61,7 +61,7 @@ export const UniDetect: React.FC = () => {
         setTimeout(() => {
             setCleanMessage('');
         }, 3000);
-    }, [hiddenChars, cleanText, handleTextChange]);
+    }, [hiddenChars, cleanTextContent, handleTextInput]);
 
     return (
         <div className="UniDetect">
@@ -72,15 +72,15 @@ export const UniDetect: React.FC = () => {
                     <StatsDisplay stats={textStats} />
                     <FileUpload
                         text={text}
-                        isProcessing={isProcessing}
+                        isProcessing={isExtracting}
                         isDragging={isDragging}
                         statusMessage={cleanMessage || statusMessage}
                         messageType={cleanMessage ? cleanMessageType : messageType}
                         hiddenCharsCount={hiddenChars.length}
-                        onTextChange={handleTextChange}
+                        onTextChange={handleTextInput}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, handleTextChange)}
+                        onDrop={(e) => handleDrop(e, handleTextInput)}
                         onCleanText={handleCleanText}
                     />
                     <CharacterDisplay
@@ -94,4 +94,4 @@ export const UniDetect: React.FC = () => {
             </footer>
         </div>
     );
-}; 
+};

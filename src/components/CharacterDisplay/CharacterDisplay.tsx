@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useState, memo} from 'react';
 import {HiddenChar} from '../../types';
 import './CharacterDisplay.css';
 
@@ -14,8 +14,16 @@ interface CharacterDisplayProps {
  * Component for displaying text with highlighted characters
  * Shows hidden characters and newlines with visual indicators
  */
-export const CharacterDisplay: React.FC<CharacterDisplayProps> = ({text, hiddenChars}) => {
+const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hiddenChars}) => {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    // Get only hidden characters (filtering out newlines)
+    const onlyHiddenChars = React.useMemo(() =>
+        hiddenChars.filter(char => char.type === 'hidden'),
+        [hiddenChars]
+    );
+
+    const hiddenCount = onlyHiddenChars.length;
 
     const toggleExpanded = useCallback(() => {
         setIsExpanded(prev => !prev);
@@ -50,6 +58,9 @@ export const CharacterDisplay: React.FC<CharacterDisplayProps> = ({text, hiddenC
                     key={`hidden-${i}`}
                     className={`hidden-char ${current.type}`}
                     title={`${current.code}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Hidden character at position ${current.index + 1}: ${current.code}`}
                 >
                     <span>
                         {current.type === 'newline'
@@ -85,20 +96,32 @@ export const CharacterDisplay: React.FC<CharacterDisplayProps> = ({text, hiddenC
             <div className="result-container">
                 {renderText() || 'Paste some text to analyze...'}
             </div>
-            {hiddenChars.length > 0 && (
+            {hiddenCount > 0 && (
                 <div className="summary-container">
-                    <div className="summary-header" onClick={toggleExpanded}>
-                        <h3>Found {hiddenChars.length} hidden character{hiddenChars.length === 1 ? '' : 's'}</h3>
+                    <div
+                        className="summary-header"
+                        onClick={toggleExpanded}
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
+                        aria-controls="character-summary-list"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleExpanded();
+                            }
+                        }}
+                    >
+                        <h3>Found {hiddenCount} hidden character{hiddenCount === 1 ? '' : 's'}</h3>
                         <button
                             className={`summary-toggle ${isExpanded ? 'expanded' : ''}`}
                             aria-label={isExpanded ? 'Collapse list' : 'Expand list'}
                         >
                             ▼
                         </button>
-                    </div>
-                    <div className={`summary-content ${isExpanded ? 'expanded' : ''}`}>
-                        <ul>
-                            {hiddenChars.map((char, index) => (
+                    </div>                    <div className={`summary-content ${isExpanded ? 'expanded' : ''}`}>
+                        <ul id="character-summary-list">
+                            {onlyHiddenChars.map((char, index) => (
                                 <li key={index} className={char.type}>
                                     Position {char.index + 1}: {char.code}
                                 </li>
@@ -109,4 +132,6 @@ export const CharacterDisplay: React.FC<CharacterDisplayProps> = ({text, hiddenC
             )}
         </>
     );
-}; 
+};
+
+export const CharacterDisplay = memo(CharacterDisplayComponent);

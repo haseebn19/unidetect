@@ -1,27 +1,27 @@
 import {useState, useCallback} from 'react';
-import {processFile} from '../utils/fileProcessing';
+import {extractTextFromFile} from '../utils/fileExtraction';
 import {MessageType} from '../types';
 
 /**
- * Result type for the file processing hook
+ * Result type for the file extraction hook
  */
-interface UseFileProcessingResult {
-    isProcessing: boolean;
+interface UseFileExtractionResult {
+    isExtracting: boolean;
     isDragging: boolean;
     statusMessage: string;
     messageType: MessageType;
     handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
     handleDrop: (e: React.DragEvent<HTMLDivElement>, onSuccess: (text: string) => void) => void;
-    processUploadedFile: (file: File, onSuccess: (text: string) => void) => Promise<void>;
+    extractFromFile: (file: File, onSuccess: (text: string) => void) => Promise<void>;
 }
 
 /**
- * Hook for handling file uploads and drag-and-drop functionality
- * @returns Object containing file processing state and handlers
+ * Hook for handling file text extraction and drag-and-drop functionality
+ * @returns Object containing file extraction state and handlers
  */
-export const useFileProcessing = (): UseFileProcessingResult => {
-    const [isProcessing, setIsProcessing] = useState<boolean>(false);
+export const useFileExtraction = (): UseFileExtractionResult => {
+    const [isExtracting, setIsExtracting] = useState<boolean>(false);
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [statusMessage, setStatusMessage] = useState<string>('');
     const [messageType, setMessageType] = useState<MessageType>('info');
@@ -45,21 +45,21 @@ export const useFileProcessing = (): UseFileProcessingResult => {
     }, []);
 
     /**
-     * Processes an uploaded file and handles success/error states
+     * Extracts text from a file and handles success/error states
      */
-    const processUploadedFile = async (file: File, onSuccess: (text: string) => void) => {
-        setIsProcessing(true);
+    const extractFromFile = async (file: File, onSuccess: (text: string) => void) => {
+        setIsExtracting(true);
         try {
-            const extractedText = await processFile(file);
+            const extractedText = await extractTextFromFile(file);
             onSuccess(extractedText);
             setMessageType('success');
             setStatusMessage(`File "${file.name}" loaded successfully`);
         } catch (error) {
-            console.error('Error processing file:', error);
+            console.error('Error extracting text from file:', error);
             setMessageType('error');
             setStatusMessage(`Could not extract text from "${file.name}". Try copying the text directly.`);
         } finally {
-            setIsProcessing(false);
+            setIsExtracting(false);
             setTimeout(() => {
                 setStatusMessage('');
             }, 3000);
@@ -80,7 +80,7 @@ export const useFileProcessing = (): UseFileProcessingResult => {
         // Check for files first
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            processUploadedFile(files[0], onSuccess);
+            extractFromFile(files[0], onSuccess);
             return;
         }
 
@@ -97,13 +97,13 @@ export const useFileProcessing = (): UseFileProcessingResult => {
     }, []);
 
     return {
-        isProcessing,
+        isExtracting,
         isDragging,
         statusMessage,
         messageType,
         handleDragOver,
         handleDragLeave,
         handleDrop,
-        processUploadedFile
+        extractFromFile
     };
-}; 
+};

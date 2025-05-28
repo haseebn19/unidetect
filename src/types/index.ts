@@ -33,4 +33,4 @@ export interface TextStats {
 /**
  * Types of status messages
  */
-export type MessageType = 'success' | 'info' | 'error'; 
+export type MessageType = 'success' | 'info' | 'error';
