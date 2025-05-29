@@ -61,22 +61,74 @@ const isHiddenCharacter = (char: string, code: number): boolean => {
 };
 
 /**
+ * Unicode character names for common hidden/special characters
+ */
+const UNICODE_NAMES: Record<number, string> = {
+    // Zero-width and invisible characters
+    0x200B: 'Zero Width Space',
+    0x200C: 'Zero Width Non-Joiner',
+    0x200D: 'Zero Width Joiner',
+    0x200E: 'Left-to-Right Mark',
+    0x200F: 'Right-to-Left Mark',
+    0x2060: 'Word Joiner',
+    0x2061: 'Function Application',
+    0x2062: 'Invisible Times',
+    0x2063: 'Invisible Separator',
+    0x2064: 'Invisible Plus',
+    0x2066: 'Left-to-Right Isolate',
+    0x2067: 'Right-to-Left Isolate',
+    0x2068: 'First Strong Isolate',
+    0x2069: 'Pop Directional Isolate',
+    0xFEFF: 'Byte Order Mark',
+
+    // Control characters
+    0x0000: 'Null',
+    0x0001: 'Start of Heading',
+    0x0002: 'Start of Text',
+    0x0003: 'End of Text',
+    0x0007: 'Bell',
+    0x0008: 'Backspace',
+    0x0009: 'Character Tabulation',
+    0x000A: 'Line Feed',
+    0x000B: 'Line Tabulation',
+    0x000C: 'Form Feed',
+    0x000D: 'Carriage Return',
+    0x001B: 'Escape',
+    0x007F: 'Delete',
+    0x0085: 'Next Line',
+
+    // Space characters
+    0x00A0: 'No-Break Space',
+    0x2000: 'En Quad',
+    0x2001: 'Em Quad',
+    0x2002: 'En Space',
+    0x2003: 'Em Space',
+    0x2009: 'Thin Space',
+    0x200A: 'Hair Space',
+    0x202F: 'Narrow No-Break Space',
+    0x3000: 'Ideographic Space',
+
+    // Other format characters
+    0x061C: 'Arabic Letter Mark',
+    0x180E: 'Mongolian Vowel Separator'
+};
+
+
+
+/**
  * Gets the Unicode name and code point for a character
  * @param code Unicode code point value
  * @returns Formatted string with code point and name
  */
 export const getUnicodeCodeName = (code: number): string => {
     const codeHex = code.toString(16).toUpperCase().padStart(4, '0');
+    const unicodeName = UNICODE_NAMES[code];
 
-    // Special format characters with descriptive names
-    switch (code) {
-        case 0x2060: return 'Word Joiner (U+2060)';
-        case 0x2061: return 'Function Application (U+2061)';
-        case 0x2062: return 'Invisible Times (U+2062)';
-        case 0x2063: return 'Invisible Separator (U+2063)';
-        case 0x2064: return 'Invisible Plus (U+2064)';
-        case 0x200B: return 'Zero Width Space (U+200B)';
-        case 0xFEFF: return 'Byte Order Mark (U+FEFF)';
-        default: return `U+${codeHex}`;
+    if (unicodeName) {
+        return `${unicodeName} (U+${codeHex})`;
     }
+
+    // Simple fallback for unknown characters
+    return `U+${codeHex}`;
 };
+
