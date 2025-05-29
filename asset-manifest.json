@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/unidetect/static/css/main.49d0130a.css",
-    "main.js": "/unidetect/static/js/main.db3abf38.js",
+    "main.js": "/unidetect/static/js/main.61dcb1b3.js",
     "index.html": "/unidetect/index.html",
     "main.49d0130a.css.map": "/unidetect/static/css/main.49d0130a.css.map",
-    "main.db3abf38.js.map": "/unidetect/static/js/main.db3abf38.js.map"
+    "main.61dcb1b3.js.map": "/unidetect/static/js/main.61dcb1b3.js.map"
   },
   "entrypoints": [
     "static/css/main.49d0130a.css",
-    "static/js/main.db3abf38.js"
+    "static/js/main.61dcb1b3.js"
   ]
 }
