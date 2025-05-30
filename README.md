@@ -91,3 +91,9 @@ If you'd like to contribute to UniDetect or have suggestions for improvements, p
 This project uses open-source libraries:
 - [PDF.js](https://mozilla.github.io/pdf.js/) - PDF file processing
 - [Mammoth.js](https://github.com/mwilliamson/mammoth.js) - DOCX file processing
+
+---
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
