@@ -10,6 +10,34 @@
 }
 
 /**
+ * Touch device optimizations
+ */
+@media (pointer: coarse) {
+    /* Increase spacing for touch targets */
+    button,
+    [role="button"],
+    a,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Remove outlines on touch devices */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Improve touch scrolling behavior */
+    body,
+    .UniDetect,
+    .result-container {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/**
  * Root element styles
  */
 html,
@@ -20,6 +48,7 @@ body,
     height: 100%;
     /* Prevent overscroll/bounce behavior */
     overscroll-behavior: none;
+    max-width: 100vw;
 }
 
 html {

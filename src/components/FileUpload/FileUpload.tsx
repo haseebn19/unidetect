@@ -1,4 +1,4 @@
-import React, {useCallback, memo} from 'react';
+import React, {useCallback, memo, useEffect, useRef} from 'react';
 import {MessageType} from '../../types';
 import './FileUpload.css';
 
@@ -36,6 +36,8 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
     onDrop,
     onCleanText
 }) => {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
     /**
      * Handles paste events to preserve original text formatting
      */
@@ -45,6 +47,32 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
         onTextChange(text);
     }, [onTextChange]);
 
+    /**
+     * Update the textarea placeholder based on device type
+     */
+    useEffect(() => {
+        const updatePlaceholder = () => {
+            if (!textareaRef.current) return;
+            
+            const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
+            const mobilePlaceholder = textareaRef.current.getAttribute('data-mobile-placeholder');
+            const desktopPlaceholder = textareaRef.current.getAttribute('data-desktop-placeholder');
+            
+            if (isMobile && mobilePlaceholder) {
+                textareaRef.current.placeholder = mobilePlaceholder;
+            } else if (desktopPlaceholder) {
+                textareaRef.current.placeholder = desktopPlaceholder;
+            }
+        };
+
+        updatePlaceholder();
+        window.addEventListener('resize', updatePlaceholder);
+        
+        return () => {
+            window.removeEventListener('resize', updatePlaceholder);
+        };
+    }, []);
+
     return (
         <div className="textarea-wrapper">
             <div
@@ -52,12 +80,17 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-            >
-                <textarea
+            >                <textarea
+                    ref={textareaRef}
                     value={text}
                     onChange={(e) => onTextChange(e.target.value)}
                     onPaste={handlePaste}
-                    placeholder="Paste your text here or drag & drop any document"
+                    placeholder="Paste text or tap to type"
+                    data-mobile-placeholder="Tap to enter text"
+                    data-desktop-placeholder="Paste your text here or drag & drop any document"
+                    autoCapitalize="off"
+                    autoComplete="off"
+                    spellCheck="false"
                 />
                 {isDragging && (
                     <div className="drag-overlay">
