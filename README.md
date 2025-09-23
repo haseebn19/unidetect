@@ -27,6 +27,7 @@ UniDetect is a modern web application designed to help users detect and clean hi
 - Node.js 16.x or higher
 - npm (Node Package Manager)
 - A modern web browser
+- Docker & Docker Compose (optional - for containerized development, see [DOCKER.md](DOCKER.md))
 
 ## Installation
 
