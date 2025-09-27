@@ -9,7 +9,7 @@ export interface HiddenChar {
     /** Unicode code point and name */
     code: string;
     /** Type of hidden character */
-    type: 'hidden' | 'newline';
+    type: 'hidden' | 'newline' | 'tab';
 }
 
 /**
@@ -18,12 +18,14 @@ export interface HiddenChar {
 export interface TextStats {
     /** Total number of characters */
     totalChars: number;
-    /** Number of visible characters */
+    /** Number of visible characters (including tabs and newlines) */
     visibleChars: number;
-    /** Number of hidden characters (excluding newlines) */
+    /** Number of hidden characters */
     hiddenChars: number;
-    /** Number of newline characters */
+    /** Number of newline characters (also included in visibleChars) */
     newlineChars: number;
+    /** Number of tab characters (also included in visibleChars) */
+    tabChars: number;
     /** Total size in bytes */
     bytes: number;
     /** Number of space characters */

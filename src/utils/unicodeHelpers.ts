@@ -17,7 +17,7 @@ const getUnicodeCategory = (char: string): string => {
     if (/^\p{Z}$/u.test(char)) return 'Z'; // Separator/space
     if (/^\p{M}$/u.test(char)) return 'M'; // Mark
     if (/^\p{C}$/u.test(char)) return 'C'; // Control/format
-    
+
     // Default category for anything else
     return 'O'; // Other
 };
@@ -50,6 +50,17 @@ export const detectHiddenChars = (input: string): HiddenChar[] => {
             continue;
         }
 
+        // Handle tab characters
+        if (char === '\t') {
+            hidden.push({
+                char,
+                index: i,
+                code: 'TAB (U+0009)',
+                type: 'tab'
+            });
+            continue;
+        }
+
         if (isHiddenCharacter(char, code)) {
             const codeName = getUnicodeCodeName(code);
             hidden.push({
@@ -71,43 +82,39 @@ export const detectHiddenChars = (input: string): HiddenChar[] => {
  * @returns True if the character is hidden/non-printable
  */
 const isHiddenCharacter = (char: string, code: number): boolean => {
-    // Special space characters - check for these specifically since some are not correctly identified by regex
-    if (code === 0x205F || // Medium Mathematical Space
-        code === 0x00A0 || // No-Break Space
-        code === 0x202F || // Narrow No-Break Space
-        (code >= 0x2000 && code <= 0x200A) || // Various width spaces
-        code === 0x3000) // Ideographic Space
+    // Special space characters
+    if (code === 0x205F ||
+        code === 0x00A0 ||
+        code === 0x202F ||
+        (code >= 0x2000 && code <= 0x200A) ||
+        code === 0x3000)
         return true;
 
     // Word joiners, zero-width characters, and other special format characters
-    if ((code >= 0x2060 && code <= 0x206F) || // Word joiners and invisible format characters
-        (code >= 0x200B && code <= 0x200F) || // Zero-width characters and directional marks
-        code === 0xFEFF) // Byte order mark
+    if ((code >= 0x2060 && code <= 0x206F) ||
+        (code >= 0x200B && code <= 0x200F) ||
+        code === 0xFEFF)
         return true;
 
     // Control characters
     if ((code >= 0x00 && code <= 0x1F) || (code >= 0x7F && code <= 0x9F)) {
-        return code !== 0x09 && code !== 0x0A && code !== 0x0D; // Exclude tab and newlines
+        return code !== 0x09 && code !== 0x0A && code !== 0x0D;
     }
 
     // Arabic Letter Mark and Mongolian Vowel Separator
     if (code === 0x061C || code === 0x180E)
         return true;
-    
-    // Additional check for other characters by their Unicode category
-    // Using a more precise approach than regex for better performance
+
     const category = getUnicodeCategory(char);
-    
-    // If it's a visible character from standard categories, it's not hidden
+
     if (category === 'L' || category === 'N' || category === 'P' || category === 'S') {
         return false;
     }
-    
-    // Exclude regular spaces, which are categorized as 'Zs'
-    if (code === 0x0020) { // Regular space
+
+    if (code === 0x0020) {
         return false;
     }
-    
+
     // For everything else, consider it potentially hidden or special
     return true;
 };
@@ -215,7 +222,7 @@ export const getUnicodeCodeName = (code: number): string => {
     if (unicodeName) {
         return `${unicodeName} (U+${codeHex})`;
     }
-    
+
     // Try to identify the range this character belongs to
     for (const [start, end, name] of UNICODE_RANGES) {
         if (code >= start && code <= end) {

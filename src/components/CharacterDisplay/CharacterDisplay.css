@@ -78,6 +78,13 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.hidden-char.tab span {
+    background-color: #e6f0ff;
+    color: #3a6ea8;
+    font-weight: normal;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .hidden-char:hover span {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);

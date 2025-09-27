@@ -21,7 +21,7 @@ const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
     };
 
     return (
-        <div className="stats-container">
+        <div className={`stats-container ${stats.hiddenChars > 0 ? 'has-hidden' : ''}`}>
             {/* Main stats display - always shown */}
             <div
                 className="summary-header stats-header"
@@ -42,7 +42,7 @@ const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
                         <span className="stat-label">Non-Hidden:</span>
                         <span className="stat-value">{stats.visibleChars}</span>
                     </div>
-                    <div className="stat-item">
+                    <div className={`stat-item ${stats.hiddenChars > 0 ? 'has-hidden' : ''}`}>
                         <span className="stat-label">Hidden:</span>
                         <span className="stat-value">{stats.hiddenChars}</span>
                     </div>
@@ -64,6 +64,10 @@ const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
                     <div className="stat-item">
                         <span className="stat-label">Newlines:</span>
                         <span className="stat-value">{stats.newlineChars}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">Tabs:</span>
+                        <span className="stat-value">{stats.tabChars}</span>
                     </div>
                     <div className="stat-item">
                         <span className="stat-label">Spaces:</span>

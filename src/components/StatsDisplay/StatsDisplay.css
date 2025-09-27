@@ -5,6 +5,13 @@
     backdrop-filter: blur(5px);
     overflow: hidden;
     padding: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+/* Container styling when hidden characters are present */
+.stats-container.has-hidden {
+    box-shadow: 0 0 0 2px #ffd700;
+    animation: borderPulse 2s infinite ease-in-out;
 }
 
 .stats-header {
@@ -34,6 +41,20 @@
     flex-grow: 1;
     padding: 0.5rem;
     min-width: 120px;
+    transition: all 0.3s ease;
+}
+
+/* Warning indicator for hidden characters */
+.stat-item.has-hidden {
+    background: rgba(255, 215, 0, 0.3);
+    border-radius: 6px;
+    border: 1px solid #ffd700;
+}
+
+.stat-item.has-hidden .stat-value {
+    color: #ffd700;
+    font-weight: 600;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
 
 .stats-advanced {
@@ -55,7 +76,7 @@
     }
 
     .stats-advanced {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
     }
 }
 
@@ -98,5 +119,19 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes borderPulse {
+    0% {
+        box-shadow: 0 0 0 2px #ffd700;
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.7);
+    }
+
+    100% {
+        box-shadow: 0 0 0 2px #ffd700;
     }
 }

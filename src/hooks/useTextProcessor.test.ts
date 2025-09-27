@@ -41,13 +41,15 @@ describe('useTextProcessor', () => {
         });
 
         const stats = result.current.textStats;
-        expect(stats.totalChars).toBe(24); // original text without normalization
-        expect(stats.visibleChars).toBe(23); // excludes \n        expect(stats.newlineChars).toBe(1); // only one \n character
+        expect(stats.totalChars).toBe(24);
+        expect(stats.visibleChars).toBe(24);
+        expect(stats.newlineChars).toBe(1);
         expect(stats.spaces).toBe(2);
     });
 
     it('should clean text by removing hidden characters', () => {
         const {result} = renderHook(() => useTextProcessor());
+        // Test with zero-width space, word joiner, and no-break space
         const textWithHidden = 'Hello\u200b\u2060World\u00a0Test';
 
         act(() => {
@@ -55,8 +57,8 @@ describe('useTextProcessor', () => {
         });
 
         const cleanedText = result.current.cleanTextContent();
-        // Hidden chars (\u200b, \u2060) become spaces, NBSP (\u00a0) is preserved as-is
-        expect(cleanedText).toBe('Hello  World\u00a0Test');
+        // Zero-width characters are removed, no-break space is replaced with regular space
+        expect(cleanedText).toBe('HelloWorld Test');
     });
 
     it('should handle empty text input', () => {

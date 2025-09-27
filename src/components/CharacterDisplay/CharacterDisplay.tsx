@@ -17,7 +17,6 @@ interface CharacterDisplayProps {
 const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hiddenChars}) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Get only hidden characters (filtering out newlines)
     const onlyHiddenChars = React.useMemo(() =>
         hiddenChars.filter(char => char.type === 'hidden'),
         [hiddenChars]
@@ -65,7 +64,9 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
                     <span>
                         {current.type === 'newline'
                             ? (current.char === '\r' ? '↵' : '⏎')
-                            : '⚠'}
+                            : current.type === 'tab'
+                                ? '↹'  // Tab symbol
+                                : '⚠'}
                     </span>
                 </span>
             );

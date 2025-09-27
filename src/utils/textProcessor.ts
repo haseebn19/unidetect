@@ -25,6 +25,7 @@ export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): Tex
     let hiddenCount = 0;
     let newlineCount = 0;
     let spaces = 0;
+    let tabCount = 0;
     let visibleChars = 0;
 
     const hiddenIndices = new Set<number>();
@@ -34,14 +35,15 @@ export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): Tex
             hiddenIndices.add(hiddenChar.index);
             hiddenCount++;
         } else if (hiddenChar.type === 'newline') {
-            hiddenIndices.add(hiddenChar.index);
             newlineCount++;
+        } else if (hiddenChar.type === 'tab') {
+            tabCount++;
         }
     }
 
     for (let i = 0; i < text.length; i++) {
         const char = text[i];
-        if (char === ' ') {
+        if (char === ' ') {  // Count only spaces, not tabs (tabs are counted separately)
             spaces++;
         }
         if (!hiddenIndices.has(i)) {
@@ -54,22 +56,31 @@ export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): Tex
         visibleChars,
         hiddenChars: hiddenCount,
         newlineChars: newlineCount,
+        tabChars: tabCount,
         bytes: new Blob([text]).size,
         spaces
     };
 };
 
 /**
- * Cleans text by replacing hidden characters with spaces
- * Preserves newlines and visible characters
+ * Cleans text by removing or replacing hidden characters:
+ * - Zero-width characters (including soft hyphens) are completely removed
+ * - Other hidden characters are replaced with spaces
+ * - Preserves newlines, tabs, and visible characters
  * @param text The text to clean
  * @param hiddenChars Array of detected hidden characters
- * @returns Cleaned text with hidden characters replaced
+ * @returns Cleaned text with hidden characters removed or replaced
  */
 export const cleanText = (text: string, hiddenChars: HiddenChar[]): string => {
     const newlineChars = new Map(
         hiddenChars
             .filter(char => char.type === 'newline')
+            .map(char => [char.index, char.char])
+    );
+
+    const tabChars = new Map(
+        hiddenChars
+            .filter(char => char.type === 'tab')
             .map(char => [char.index, char.char])
     );
 
@@ -83,10 +94,23 @@ export const cleanText = (text: string, hiddenChars: HiddenChar[]): string => {
         );
 
         if (isHidden) {
-            cleanedText += ' ';
+            const code = char.codePointAt(0);
+            const isZeroWidth = code && (
+                (code >= 0x200B && code <= 0x200F) ||
+                (code >= 0x2060 && code <= 0x206F) ||
+                code === 0xFEFF ||
+                code === 0x00AD
+            );
+
+            if (!isZeroWidth) {
+                cleanedText += ' ';
+            }
         } else if (newlineChars.has(i)) {
             // Preserve the exact newline character (CR or LF)
             cleanedText += newlineChars.get(i);
+        } else if (tabChars.has(i)) {
+            // Preserve tab characters
+            cleanedText += tabChars.get(i);
         } else {
             cleanedText += char;
         }

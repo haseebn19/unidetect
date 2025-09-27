@@ -129,7 +129,7 @@ export const UniDetect: React.FC = () => {
                         isDragging={isDragging}
                         statusMessage={cleanMessage || statusMessage}
                         messageType={cleanMessage ? cleanMessageType : messageType}
-                        hiddenCharsCount={hiddenChars.length}
+                        hiddenCharsCount={textStats.hiddenChars}
                         isMessageFadingOut={isCleanMessageFadingOut}
                         onTextChange={handleTextInput}
                         onDragOver={handleDragOver}
