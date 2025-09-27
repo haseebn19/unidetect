@@ -15,7 +15,7 @@ interface StatsDisplayProps {
  */
 const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
     const [showAdvanced, setShowAdvanced] = useState(false);
-    
+
     const toggleAdvanced = () => {
         setShowAdvanced(prev => !prev);
     };
@@ -23,7 +23,7 @@ const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
     return (
         <div className="stats-container">
             {/* Main stats display - always shown */}
-            <div 
+            <div
                 className="summary-header stats-header"
                 onClick={toggleAdvanced}
                 role="button"
@@ -47,14 +47,14 @@ const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
                         <span className="stat-value">{stats.hiddenChars}</span>
                     </div>
                 </div>
-                <button 
+                <button
                     className={`summary-toggle ${showAdvanced ? 'expanded' : ''}`}
                     aria-label={showAdvanced ? 'Hide Details' : 'Show Details'}
                 >
                     ▼
                 </button>
             </div>
-            
+
             <div className={`summary-content ${showAdvanced ? 'expanded' : ''}`}>
                 <div className="stats-advanced">
                     <div className="stat-item">
