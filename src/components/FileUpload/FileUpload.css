@@ -6,6 +6,8 @@
 .textarea-container {
     position: relative;
     width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 textarea {
@@ -28,6 +30,8 @@ textarea {
     appearance: none;
     -webkit-appearance: none;
     border-radius: 8px;
+    display: block;
+    box-sizing: border-box; 
 }
 
 @media (min-width: 768px) {
@@ -56,11 +60,14 @@ textarea:focus {
     justify-content: center;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 8px;
+    border: 2px solid transparent;
     color: #fff;
     font-size: 1rem;
     pointer-events: none;
     text-align: center;
     padding: 1rem;
+    box-sizing: border-box;
+    height: 100%;
 }
 
 @media (min-width: 768px) {
@@ -72,6 +79,7 @@ textarea:focus {
 
 .dragging textarea {
     border-color: #4a9eff;
+    box-sizing: border-box;
 }
 
 .processing textarea {
