@@ -52,7 +52,7 @@ export const UniDetect: React.FC = () => {
 
         // Start fade-out animation
         setIsCleanMessageFadingOut(true);
-        
+
         // Remove message after animation completes
         fadeOutTimeoutRef.current = setTimeout(() => {
             setCleanMessage('');

@@ -55,11 +55,11 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
     useEffect(() => {
         const updatePlaceholder = () => {
             if (!textareaRef.current) return;
-            
+
             const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
             const mobilePlaceholder = textareaRef.current.getAttribute('data-mobile-placeholder');
             const desktopPlaceholder = textareaRef.current.getAttribute('data-desktop-placeholder');
-            
+
             if (isMobile && mobilePlaceholder) {
                 textareaRef.current.placeholder = mobilePlaceholder;
             } else if (desktopPlaceholder) {
@@ -69,7 +69,7 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
 
         updatePlaceholder();
         window.addEventListener('resize', updatePlaceholder);
-        
+
         return () => {
             window.removeEventListener('resize', updatePlaceholder);
         };

@@ -13,6 +13,7 @@
  * Touch device optimizations
  */
 @media (pointer: coarse) {
+
     /* Increase spacing for touch targets */
     button,
     [role="button"],
