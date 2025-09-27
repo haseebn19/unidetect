@@ -31,7 +31,7 @@ textarea {
     -webkit-appearance: none;
     border-radius: 8px;
     display: block;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
@@ -71,6 +71,7 @@ textarea:focus {
 }
 
 @media (min-width: 768px) {
+
     .drag-overlay,
     .processing-overlay {
         font-size: 1.2rem;
@@ -107,7 +108,7 @@ textarea:focus {
         justify-content: space-between;
         align-items: center;
     }
-    
+
     .clean-options {
         gap: 1rem;
         justify-content: flex-start;
@@ -123,9 +124,11 @@ textarea:focus {
     font-size: 0.9rem;
     cursor: not-allowed;
     transition: all 0.2s ease;
-    min-height: 44px; /* Minimum touch target size */
+    min-height: 44px;
+    /* Minimum touch target size */
     min-width: 44px;
-    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    -webkit-tap-highlight-color: transparent;
+    /* Remove tap highlight on mobile */
 }
 
 .clean-button.active {
