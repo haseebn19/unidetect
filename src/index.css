@@ -86,6 +86,19 @@ body {
     }
 }
 
+/* Fade out to top animation */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
 /* Pulsing opacity animation */
 @keyframes pulse {
     0% {
@@ -109,6 +122,10 @@ body {
     padding: 0.5rem 1rem;
     border-radius: 4px;
     animation: fadeIn 0.3s ease;
+}
+
+.message.fade-out {
+    animation: fadeOut 0.3s ease forwards;
 }
 
 .message.success {

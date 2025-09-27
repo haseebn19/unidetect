@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useState, useRef, useEffect} from 'react';
 import {useTextProcessor} from '../../hooks/useTextProcessor';
 import {useFileExtraction} from '../../hooks/useFileExtraction';
 import {StatsDisplay} from '../StatsDisplay/StatsDisplay';
@@ -32,17 +32,57 @@ export const UniDetect: React.FC = () => {
 
     const [cleanMessage, setCleanMessage] = useState<string>('');
     const [cleanMessageType, setCleanMessageType] = useState<MessageType>('info');
+    const [isCleanMessageFadingOut, setIsCleanMessageFadingOut] = useState<boolean>(false);
+    const cleanMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    /**
+     * Helper function to clear messages with fade-out animation
+     */
+    const clearCleanMessage = useCallback(() => {
+        // Clear any existing timeouts to prevent conflicts
+        if (cleanMessageTimeoutRef.current) {
+            clearTimeout(cleanMessageTimeoutRef.current);
+            cleanMessageTimeoutRef.current = null;
+        }
+        if (fadeOutTimeoutRef.current) {
+            clearTimeout(fadeOutTimeoutRef.current);
+            fadeOutTimeoutRef.current = null;
+        }
+
+        // Start fade-out animation
+        setIsCleanMessageFadingOut(true);
+        
+        // Remove message after animation completes
+        fadeOutTimeoutRef.current = setTimeout(() => {
+            setCleanMessage('');
+            setIsCleanMessageFadingOut(false);
+            fadeOutTimeoutRef.current = null;
+        }, 300); // Match CSS animation duration
+    }, []);
 
     /**
      * Handles text cleaning and clipboard operations
      * Automatically copies cleaned text to clipboard
      */
     const handleCleanText = useCallback(async () => {
+        // Clear any existing timeouts first to prevent conflicts
+        if (cleanMessageTimeoutRef.current) {
+            clearTimeout(cleanMessageTimeoutRef.current);
+            cleanMessageTimeoutRef.current = null;
+        }
+        if (fadeOutTimeoutRef.current) {
+            clearTimeout(fadeOutTimeoutRef.current);
+            fadeOutTimeoutRef.current = null;
+        }
+
         const hiddenCount = hiddenChars.filter((char) => char.type === 'hidden').length;
 
         if (hiddenCount === 0) {
             setCleanMessageType('info');
             setCleanMessage('No hidden characters to clean!');
+            setIsCleanMessageFadingOut(false);
+            cleanMessageTimeoutRef.current = setTimeout(clearCleanMessage, 3000);
             return;
         }
 
@@ -58,10 +98,23 @@ export const UniDetect: React.FC = () => {
             setCleanMessage('Text cleaned but copying to clipboard failed');
         }
 
-        setTimeout(() => {
-            setCleanMessage('');
-        }, 3000);
-    }, [hiddenChars, cleanTextContent, handleTextInput]);
+        setIsCleanMessageFadingOut(false);
+        cleanMessageTimeoutRef.current = setTimeout(clearCleanMessage, 3000);
+    }, [hiddenChars, cleanTextContent, handleTextInput, clearCleanMessage]);
+
+    /**
+     * Cleanup timeouts on unmount to prevent memory leaks
+     */
+    useEffect(() => {
+        return () => {
+            if (cleanMessageTimeoutRef.current) {
+                clearTimeout(cleanMessageTimeoutRef.current);
+            }
+            if (fadeOutTimeoutRef.current) {
+                clearTimeout(fadeOutTimeoutRef.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="UniDetect">
@@ -77,6 +130,7 @@ export const UniDetect: React.FC = () => {
                         statusMessage={cleanMessage || statusMessage}
                         messageType={cleanMessage ? cleanMessageType : messageType}
                         hiddenCharsCount={hiddenChars.length}
+                        isMessageFadingOut={isCleanMessageFadingOut}
                         onTextChange={handleTextInput}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}

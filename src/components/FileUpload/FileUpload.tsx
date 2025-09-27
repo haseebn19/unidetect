@@ -12,6 +12,7 @@ interface FileUploadProps {
     statusMessage: string;
     messageType: MessageType;
     hiddenCharsCount: number;
+    isMessageFadingOut?: boolean;
     onTextChange: (text: string) => void;
     onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
     onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
@@ -30,6 +31,7 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
     statusMessage,
     messageType,
     hiddenCharsCount,
+    isMessageFadingOut = false,
     onTextChange,
     onDragOver,
     onDragLeave,
@@ -107,14 +109,13 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
                 <div className="clean-options">
                     <button
                         onClick={onCleanText}
-                        className={`clean-button ${hiddenCharsCount > 0 ? 'active' : ''}`}
-                        disabled={hiddenCharsCount === 0}
+                        className="clean-button active"
                     >
                         Clean Text
                     </button>
                 </div>
                 {statusMessage && (
-                    <span className={`message ${messageType}`}>
+                    <span className={`message ${messageType} ${isMessageFadingOut ? 'fade-out' : ''}`}>
                         {statusMessage}
                     </span>
                 )}
