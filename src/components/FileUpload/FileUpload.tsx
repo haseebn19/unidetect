@@ -41,15 +41,6 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     /**
-     * Handles paste events to preserve original text formatting
-     */
-    const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        e.preventDefault();
-        const text = await navigator.clipboard.readText();
-        onTextChange(text);
-    }, [onTextChange]);
-
-    /**
      * Update the textarea placeholder based on device type
      */
     useEffect(() => {
@@ -86,7 +77,6 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
                     ref={textareaRef}
                     value={text}
                     onChange={(e) => onTextChange(e.target.value)}
-                    onPaste={handlePaste}
                     placeholder="Paste text or tap to type"
                     data-mobile-placeholder="Tap to enter text"
                     data-desktop-placeholder="Paste your text here or drag & drop any document"
@@ -109,7 +99,8 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
                 <div className="clean-options">
                     <button
                         onClick={onCleanText}
-                        className="clean-button active"
+                        className={`clean-button ${hiddenCharsCount > 0 ? 'active' : ''}`}
+                        disabled={hiddenCharsCount === 0}
                     >
                         Clean Text
                     </button>
