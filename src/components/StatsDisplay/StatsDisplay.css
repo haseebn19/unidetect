@@ -1,60 +1,101 @@
 .stats-container {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
     background: rgba(255, 255, 255, 0.15);
-    padding: 0.75rem;
     border-radius: 8px;
     margin-bottom: 1rem;
     backdrop-filter: blur(5px);
+    overflow: hidden;
+    padding: 0.5rem;
+}
+
+.stats-header {
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin: 0.5rem;
+    transition: background-color 0.2s ease;
+}
+
+.stats-header:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-grow: 1;
+    margin-right: 2rem;
 }
 
 .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 70px;
-    padding: 0.5rem 0;
+    background: transparent;
+    flex-grow: 1;
+    padding: 0.5rem;
+    min-width: 120px;
 }
 
-@media (min-width: 480px) {
-    .stats-container {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 1rem;
-        padding: 1rem;
-    }
+.stats-advanced {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @media (min-width: 768px) {
-    .stats-container {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
+    .stats-row {
+        gap: 1.5rem;
     }
     
     .stat-item {
-        min-width: 80px;
+        min-width: 150px;
+    }
+    
+    .stats-advanced {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
 .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.8);
     margin-bottom: 0.25rem;
 }
 
 .stat-value {
-    font-size: 1rem;
-    font-weight: bold;
+    font-size: 1.75rem;
+    font-weight: 600;
     color: white;
+    margin-top: 0.25rem;
 }
 
 @media (min-width: 768px) {
     .stat-label {
-        font-size: 0.8rem;
+        font-size: 0.9rem;
     }
     
     .stat-value {
-        font-size: 1.2rem;
+        font-size: 2rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .stats-toggle {
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
