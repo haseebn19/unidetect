@@ -1,6 +1,6 @@
 # UniDetect
 
-![UniDetect Logo](public/logo192.png)
+<img src="public/logo512.png" alt="UniDetect Logo" width="250">
 
 UniDetect is a modern web application designed to help users detect and clean hidden Unicode characters in text.
 
