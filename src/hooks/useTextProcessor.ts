@@ -20,10 +20,8 @@ interface UseTextProcessorResult {
 export const useTextProcessor = (): UseTextProcessorResult => {
     const [text, setText] = useState<string>('');
     const [hiddenChars, setHiddenChars] = useState<HiddenChar[]>([]);
-    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);    /**
-     * Processes any text input (pasted or from files) through unified pipeline
-     * Detects hidden characters without text normalization
-     */
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const handleTextInput = useCallback((rawText: string) => {
         const {text: processedText, hiddenChars: detectedChars} = processText(rawText);
         setText(processedText);
@@ -41,25 +39,14 @@ export const useTextProcessor = (): UseTextProcessorResult => {
         }
     }, []);
 
-    /**
-     * Calculates and returns current text statistics
-     * Includes character counts, byte size, and space analysis
-     */
     const textStats: TextStats = useMemo(() => {
         return calculateTextStats(text, hiddenChars);
     }, [text, hiddenChars]);
 
-    /**
-     * Cleans text by replacing hidden characters with spaces
-     * Preserves newlines and visible characters
-     */
     const cleanTextContent = useCallback((): string => {
         return cleanText(text, hiddenChars);
     }, [text, hiddenChars]);
 
-    /**
-     * Cleanup debounce timeout on unmount
-     */
     useEffect(() => {
         return () => {
             if (debounceTimeoutRef.current) {

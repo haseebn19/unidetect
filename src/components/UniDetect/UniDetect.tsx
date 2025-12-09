@@ -36,11 +36,7 @@ export const UniDetect: React.FC = () => {
     const cleanMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    /**
-     * Helper function to clear messages with fade-out animation
-     */
     const clearCleanMessage = useCallback(() => {
-        // Clear any existing timeouts to prevent conflicts
         if (cleanMessageTimeoutRef.current) {
             clearTimeout(cleanMessageTimeoutRef.current);
             cleanMessageTimeoutRef.current = null;
@@ -50,10 +46,7 @@ export const UniDetect: React.FC = () => {
             fadeOutTimeoutRef.current = null;
         }
 
-        // Start fade-out animation
         setIsCleanMessageFadingOut(true);
-
-        // Remove message after animation completes
         fadeOutTimeoutRef.current = setTimeout(() => {
             setCleanMessage('');
             setIsCleanMessageFadingOut(false);
@@ -61,12 +54,7 @@ export const UniDetect: React.FC = () => {
         }, 300); // Match CSS animation duration
     }, []);
 
-    /**
-     * Handles text cleaning and clipboard operations
-     * Automatically copies cleaned text to clipboard
-     */
     const handleCleanText = useCallback(async () => {
-        // Clear any existing timeouts first to prevent conflicts
         if (cleanMessageTimeoutRef.current) {
             clearTimeout(cleanMessageTimeoutRef.current);
             cleanMessageTimeoutRef.current = null;
@@ -93,7 +81,7 @@ export const UniDetect: React.FC = () => {
             await navigator.clipboard.writeText(cleanedText);
             setCleanMessageType('success');
             setCleanMessage(`Text cleaned and copied to clipboard (${hiddenCount} hidden character${hiddenCount === 1 ? '' : 's'} removed)`);
-        } catch (err) {
+        } catch {
             setCleanMessageType('error');
             setCleanMessage('Text cleaned but copying to clipboard failed');
         }
@@ -102,9 +90,6 @@ export const UniDetect: React.FC = () => {
         cleanMessageTimeoutRef.current = setTimeout(clearCleanMessage, 3000);
     }, [hiddenChars, cleanTextContent, handleTextInput, clearCleanMessage]);
 
-    /**
-     * Cleanup timeouts on unmount to prevent memory leaks
-     */
     useEffect(() => {
         return () => {
             if (cleanMessageTimeoutRef.current) {

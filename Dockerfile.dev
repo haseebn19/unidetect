@@ -1,18 +1,18 @@
-# Development Dockerfile
+# Development Dockerfile for Vite
 FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install dependencies (including devDependencies)
 COPY package*.json ./
 RUN npm install
 
 # Copy source code (will be overridden by volume mount)
 COPY . .
 
-# Expose port 3000
+# Expose port 3000 (Vite dev server)
 EXPOSE 3000
 
-# Start development server
-CMD ["npm", "start"]
+# Start Vite development server with host flag for Docker
+CMD ["npx", "vite", "--host"]

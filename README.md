@@ -1,5 +1,7 @@
 # UniDetect
 
+[![CI](https://github.com/haseebn19/unidetect/actions/workflows/ci.yml/badge.svg)](https://github.com/haseebn19/unidetect/actions/workflows/ci.yml)
+
 <img src="public/logo512.png" alt="UniDetect Logo" width="250">
 
 UniDetect is a modern web application designed to help users detect and clean hidden Unicode characters in text.
@@ -22,9 +24,16 @@ UniDetect is a modern web application designed to help users detect and clean hi
   - Byte size information
 - **Privacy-Focused**: All text processing is done locally in your browser - no data is sent to any server.
 
+## Tech Stack
+
+- **React 18** with TypeScript
+- **Vite** - Fast build tool and dev server
+- **Vitest** - Unit testing framework
+- **ESLint** - Code linting with TypeScript and React rules
+
 ## Prerequisites
 
-- Node.js 16.x or higher
+- Node.js 18.x or higher
 - npm (Node Package Manager)
 - A modern web browser
 - Docker & Docker Compose (optional - for containerized development, see [DOCKER.md](DOCKER.md))
@@ -33,12 +42,12 @@ UniDetect is a modern web application designed to help users detect and clean hi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/haseebn19/hidden-unicode.git
+   git clone https://github.com/haseebn19/unidetect.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd hidden-unicode
+   cd unidetect
    ```
 
 3. Install the required dependencies:
@@ -48,8 +57,23 @@ UniDetect is a modern web application designed to help users detect and clean hi
 
 4. Start the development server:
    ```bash
-   npm start
+   npm run dev
    ```
+
+   The app will open at `http://localhost:3000/unidetect/`
+
+## Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm test` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Run ESLint with auto-fix |
+| `npm run type-check` | TypeScript type checking |
 
 ## Usage
 
@@ -75,7 +99,12 @@ To create a production build:
 npm run build
 ```
 
-The build files will be created in the `build` directory.
+The build files will be created in the `dist` directory.
+
+To preview the production build locally:
+```bash
+npm run preview
+```
 
 ## Contributing
 
@@ -92,6 +121,8 @@ If you'd like to contribute to UniDetect or have suggestions for improvements, p
 This project uses open-source libraries:
 - [PDF.js](https://mozilla.github.io/pdf.js/) - PDF file processing
 - [Mammoth.js](https://github.com/mwilliamson/mammoth.js) - DOCX file processing
+- [Vite](https://vitejs.dev/) - Build tool
+- [Vitest](https://vitest.dev/) - Testing framework
 
 ---
 

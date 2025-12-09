@@ -1,5 +1,5 @@
-# Production build for React app
-FROM node:18-alpine as build
+# Production build for React app with Vite
+FROM node:18-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -7,8 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install all dependencies (including dev for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
@@ -19,8 +19,8 @@ RUN npm run build
 # Production stage - serve with nginx
 FROM nginx:alpine
 
-# Copy built app to nginx
-COPY --from=build /app/build /usr/share/nginx/html
+# Copy built app to nginx (Vite outputs to dist/)
+COPY --from=build /app/dist /usr/share/nginx/html
 
 # Simple nginx config for React SPA
 RUN echo 'server { \

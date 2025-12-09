@@ -26,27 +26,18 @@ export const useFileExtraction = (): UseFileExtractionResult => {
     const [statusMessage, setStatusMessage] = useState<string>('');
     const [messageType, setMessageType] = useState<MessageType>('info');
 
-    /**
-     * Handles drag over event
-     */
     const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(true);
     }, []);
 
-    /**
-     * Handles drag leave event
-     */
     const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
     }, []);
 
-    /**
-     * Extracts text from a file and handles success/error states
-     */
     const extractFromFile = async (file: File, onSuccess: (text: string) => void) => {
         setIsExtracting(true);
         try {
@@ -66,9 +57,6 @@ export const useFileExtraction = (): UseFileExtractionResult => {
         }
     };
 
-    /**
-     * Handles file and text drop events
-     */
     const handleDrop = useCallback((
         e: React.DragEvent<HTMLDivElement>,
         onSuccess: (text: string) => void
@@ -77,14 +65,12 @@ export const useFileExtraction = (): UseFileExtractionResult => {
         e.stopPropagation();
         setIsDragging(false);
 
-        // Check for files first
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
             extractFromFile(files[0], onSuccess);
             return;
         }
 
-        // If no files, check for text content
         const text = e.dataTransfer.getData('text');
         if (text) {
             onSuccess(text);

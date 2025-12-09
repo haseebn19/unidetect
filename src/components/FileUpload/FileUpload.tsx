@@ -40,9 +40,6 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    /**
-     * Update the textarea placeholder based on device type
-     */
     useEffect(() => {
         const updatePlaceholder = () => {
             if (!textareaRef.current) return;

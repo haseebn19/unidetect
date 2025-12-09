@@ -35,13 +35,12 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
     const renderText = useCallback(() => {
         if (!text) return null;
 
-        let result = [];
+        const result = [];
         let lastIndex = 0;
 
         for (let i = 0; i < hiddenChars.length; i++) {
             const current = hiddenChars[i];
 
-            // Add text before the current character
             if (current.index > lastIndex) {
                 const textContent = text.substring(lastIndex, current.index);
                 result.push(
@@ -51,7 +50,6 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
                 );
             }
 
-            // Add the highlighted character
             result.push(
                 <span
                     key={`hidden-${i}`}
@@ -71,7 +69,6 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
                 </span>
             );
 
-            // Add line break after LF
             if (current.type === 'newline' && current.char === '\n') {
                 result.push(<br key={`br-${i}`} />);
             }
@@ -79,7 +76,6 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
             lastIndex = current.index + 1;
         }
 
-        // Add remaining text
         if (lastIndex < text.length) {
             const textContent = text.substring(lastIndex);
             result.push(
