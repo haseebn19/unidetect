@@ -4,127 +4,104 @@
 
 <img src="public/logo512.png" alt="UniDetect Logo" width="250">
 
-UniDetect is a modern web application designed to help users detect and clean hidden Unicode characters in text.
+A modern web application for detecting and cleaning hidden Unicode characters in text.
 
 ## Features
 
-- **Real-time Unicode Detection**: Instantly detect hidden and special Unicode characters in your text.
-- **Visual Character Highlighting**: Hidden characters are highlighted with tooltips showing their Unicode codes.
-- **Multiple File Format Support**: Process text from various file types:
-  - PDF documents
-  - Microsoft Word (DOCX) files
-  - Plain text files (TXT)
-  - Markdown files (MD)
-- **Drag & Drop Support**: Easy file uploading through drag and drop interface.
-- **Clean Text Functionality**: One-click cleaning of hidden characters with automatic clipboard copy.
-- **Real-time Statistics**: Monitor your text with detailed statistics:
-  - Total character count
-  - Visible/hidden character counts
-  - Newline and space counts
-  - Byte size information
-- **Privacy-Focused**: All text processing is done locally in your browser - no data is sent to any server.
-
-## Tech Stack
-
-- **React 18** with TypeScript
-- **Vite** - Fast build tool and dev server
-- **Vitest** - Unit testing framework
-- **ESLint** - Code linting with TypeScript and React rules
+- **Real-time Unicode Detection**: Instantly detect hidden and special Unicode characters
+- **Visual Character Highlighting**: Hidden characters highlighted with Unicode code tooltips
+- **Multiple File Format Support**: Process PDF, DOCX, TXT, and MD files
+- **Drag & Drop Support**: Easy file uploading through drag and drop
+- **Clean Text Functionality**: One-click cleaning with automatic clipboard copy
+- **Real-time Statistics**: Character counts, byte size, and detailed breakdowns
+- **Privacy-Focused**: All processing done locally in your browser
 
 ## Prerequisites
 
 - Node.js 18.x or higher
 - npm (Node Package Manager)
-- A modern web browser
-- Docker & Docker Compose (optional - for containerized development, see [DOCKER.md](DOCKER.md))
+- Docker & Docker Compose (optional, see [DOCKER.md](DOCKER.md))
 
 ## Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/haseebn19/unidetect.git
-   ```
-
-2. Navigate to the project directory:
-   ```bash
-   cd unidetect
-   ```
-
-3. Install the required dependencies:
-   ```bash
-   npm install
-   ```
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-   The app will open at `http://localhost:3000/unidetect/`
-
-## Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm test` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Run ESLint with auto-fix |
-| `npm run type-check` | TypeScript type checking |
+```bash
+git clone https://github.com/haseebn19/unidetect.git
+cd unidetect
+npm install
+```
 
 ## Usage
 
-1. **Text Input**:
-   - Paste text directly into the text area
-   - Drag and drop supported files
-   - Type or edit text directly
-
-2. **Character Detection**:
-   - Hidden characters are automatically highlighted
-   - Hover over highlights to see Unicode information
-   - View detailed statistics about your text
-
-3. **Text Cleaning**:
-   - Click "Clean Text" to remove hidden characters
-   - Cleaned text is automatically copied to clipboard
-   - Original formatting and line breaks are preserved
-
-## Building for Production
-
-To create a production build:
 ```bash
-npm run build
+npm run dev
 ```
 
-The build files will be created in the `dist` directory.
+1. Open `http://localhost:3000/unidetect/` in your browser
+2. Paste text directly or drag and drop a file (PDF, DOCX, TXT, MD)
+3. Hidden characters are automatically highlighted - hover to see Unicode info
+4. Click "Clean Text" to remove hidden characters and copy to clipboard
 
-To preview the production build locally:
+## Development
+
+### Setup
+
 ```bash
-npm run preview
+npm install
+npm run dev
+```
+
+### Testing
+
+```bash
+npm test              # Run tests in watch mode
+npm run test:coverage # Run tests with coverage report
+```
+
+### Linting
+
+```bash
+npm run lint          # Run ESLint
+npm run lint:fix      # Run ESLint with auto-fix
+npm run type-check    # TypeScript type checking
+```
+
+## Building
+
+```bash
+npm run build   # Build for production
+npm run preview # Preview production build
+```
+
+Build output is created in the `dist` directory.
+
+## Project Structure
+
+```
+unidetect/
+├── src/
+│   ├── components/     # React components with co-located CSS
+│   ├── hooks/          # Custom React hooks
+│   ├── utils/          # Utility functions
+│   ├── types/          # TypeScript type definitions
+│   └── test/           # Test setup
+├── public/             # Static assets
+└── .github/workflows/  # CI/CD configuration
 ```
 
 ## Contributing
 
-If you'd like to contribute to UniDetect or have suggestions for improvements, please fork the repository and create a pull request.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## Credits
 
-This project uses open-source libraries:
 - [PDF.js](https://mozilla.github.io/pdf.js/) - PDF file processing
 - [Mammoth.js](https://github.com/mwilliamson/mammoth.js) - DOCX file processing
 - [Vite](https://vitejs.dev/) - Build tool
 - [Vitest](https://vitest.dev/) - Testing framework
-
----
 
 ## License
 
