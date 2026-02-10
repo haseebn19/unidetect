@@ -1,0 +1,38 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="richBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3a1c71;stop-opacity:1" /> <stop offset="100%" style="stop-color:#0d324d;stop-opacity:1" /> </linearGradient>
+    
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="120" fill="url(#richBg)" />
+  
+  <text x="256" y="220" 
+        font-family="Arial, Helvetica, sans-serif" 
+        font-weight="400" 
+        font-size="200" 
+        fill="#00E5FF" 
+        text-anchor="middle" 
+        dominant-baseline="middle"
+        letter-spacing="5"
+        filter="url(#softGlow)">U+</text>
+  
+  <g transform="translate(0, 50)" filter="url(#softGlow)">
+    <path d="M256 260 L315 370 L197 370 Z" 
+          fill="none" 
+          stroke="#FFC107" 
+          stroke-width="12" 
+          stroke-linejoin="round" 
+          stroke-linecap="round"/>
+    
+    <path d="M256 295 L256 330" stroke="#FFC107" stroke-width="12" stroke-linecap="round" />
+    <circle cx="256" cy="352" r="7" fill="#FFC107" />
+  </g>
+</svg>

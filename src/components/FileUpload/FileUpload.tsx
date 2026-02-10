@@ -40,19 +40,12 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+    const [placeholder, setPlaceholder] = React.useState('Paste your text here or drag & drop any document');
+
     useEffect(() => {
         const updatePlaceholder = () => {
-            if (!textareaRef.current) return;
-
             const isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
-            const mobilePlaceholder = textareaRef.current.getAttribute('data-mobile-placeholder');
-            const desktopPlaceholder = textareaRef.current.getAttribute('data-desktop-placeholder');
-
-            if (isMobile && mobilePlaceholder) {
-                textareaRef.current.placeholder = mobilePlaceholder;
-            } else if (desktopPlaceholder) {
-                textareaRef.current.placeholder = desktopPlaceholder;
-            }
+            setPlaceholder(isMobile ? 'Tap to enter text' : 'Paste your text here or drag & drop any document');
         };
 
         updatePlaceholder();
@@ -74,9 +67,7 @@ const FileUploadComponent: React.FC<FileUploadProps> = ({
                     ref={textareaRef}
                     value={text}
                     onChange={(e) => onTextChange(e.target.value)}
-                    placeholder="Paste text or tap to type"
-                    data-mobile-placeholder="Tap to enter text"
-                    data-desktop-placeholder="Paste your text here or drag & drop any document"
+                    placeholder={placeholder}
                     autoCapitalize="off"
                     autoComplete="off"
                     spellCheck="false"

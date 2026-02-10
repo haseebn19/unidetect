@@ -149,33 +149,3 @@ textarea:focus {
     transform: translateY(0);
     background: #3680d8;
 }
-
-.message {
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    max-width: 100%;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-}
-
-@media (min-width: 768px) {
-    .message {
-        font-size: 0.9rem;
-    }
-}
-
-.message.success {
-    background: rgba(72, 187, 120, 0.2);
-    color: #48bb78;
-}
-
-.message.error {
-    background: rgba(245, 101, 101, 0.2);
-    color: #f56565;
-}
-
-.message.info {
-    background: rgba(66, 153, 225, 0.2);
-    color: #4299e1;
-}

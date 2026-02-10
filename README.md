@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/haseebn19/unidetect/actions/workflows/ci.yml/badge.svg)](https://github.com/haseebn19/unidetect/actions/workflows/ci.yml)
 
-<img src="public/logo512.png" alt="UniDetect Logo" width="250">
+<img src="public/logo.svg" alt="UniDetect Logo" width="250">
 
 A modern web application for detecting and cleaning hidden Unicode characters in text.
 
