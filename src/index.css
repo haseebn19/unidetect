@@ -1,20 +1,52 @@
-/**
- * Global CSS Reset and Base Styles
- */
+:root {
+    --bg: #1a1c2e;
+    --bg-end: #283447;
+    --surface: rgba(255, 255, 255, 0.08);
+    --surface-hover: rgba(255, 255, 255, 0.12);
+    --surface-strong: rgba(255, 255, 255, 0.15);
+    --text: #e8e8ec;
+    --text-soft: rgba(255, 255, 255, 0.8);
+    --text-muted: rgba(255, 255, 255, 0.6);
+    --accent: #4a9eff;
+    --accent-hover: #3d8be6;
+    --accent-active: #3680d8;
+    --warning: #ffd700;
+    --warning-bg: rgba(255, 215, 0, 0.3);
+    --success: #48bb78;
+    --error: #f56565;
+    --info: #4299e1;
+    --line: rgba(255, 255, 255, 0.1);
+    --radius: 8px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'Courier New', Courier, monospace;
+    --transition: 200ms ease;
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    /* Prevent overscroll on all elements */
     overscroll-behavior: none;
 }
 
-/**
- * Touch device optimizations
- */
-@media (pointer: coarse) {
+html,
+body,
+#root {
+    height: 100%;
+    max-width: 100vw;
+    overflow: hidden;
+}
 
-    /* Increase spacing for touch targets */
+body {
+    height: 100vh;
+    font-family: var(--font);
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    color: var(--text);
+}
+
+@media (pointer: coarse) {
     button,
     [role="button"],
     a,
@@ -25,12 +57,10 @@
         min-width: 44px;
     }
 
-    /* Remove outlines on touch devices */
     * {
         -webkit-tap-highlight-color: transparent;
     }
 
-    /* Improve touch scrolling behavior */
     body,
     .UniDetect,
     .result-container {
@@ -38,96 +68,33 @@
     }
 }
 
-/**
- * Root element styles
- */
-html,
-body,
-#root {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overscroll-behavior: none;
-    max-width: 100vw;
-    overflow: hidden;
-}
-
-/**
- * Base body styles
- */
-body {
-    margin: 0;
-    padding: 0;
-    height: 100vh;
-    font-family: Helvetica, Arial, sans-serif;
-    overscroll-behavior: none;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-}
-
-/**
- * Global Animations
- */
-
-/* Fade in from top animation */
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Fade out to top animation */
 @keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
 }
 
-/* Pulsing opacity animation */
 @keyframes pulse {
-    0% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0.6;
-    }
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
 }
 
-/**
- * Shared Component Styles
- */
+@keyframes borderPulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--warning); }
+    50% { box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.7); }
+}
+
 .message {
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 0.85rem;
     max-width: 100%;
     overflow-wrap: break-word;
-    word-wrap: break-word;
     animation: fadeIn 0.3s ease;
-}
-
-@media (min-width: 768px) {
-    .message {
-        font-size: 0.9rem;
-    }
 }
 
 .message.fade-out {
@@ -136,31 +103,21 @@ body {
 
 .message.success {
     background: rgba(72, 187, 120, 0.2);
-    color: #48bb78;
+    color: var(--success);
 }
 
 .message.info {
     background: rgba(66, 153, 225, 0.2);
-    color: #4299e1;
+    color: var(--info);
 }
 
 .message.error {
     background: rgba(245, 101, 101, 0.2);
-    color: #f56565;
+    color: var(--error);
 }
 
-/**
- * Shared Utility Classes
- */
-.backdrop-blur {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-.text-shadow-sm {
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.text-shadow-md {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+@media (min-width: 768px) {
+    .message {
+        font-size: 0.9rem;
+    }
 }

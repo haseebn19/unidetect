@@ -6,7 +6,6 @@
 .textarea-container {
     position: relative;
     width: 100%;
-    box-sizing: border-box;
     overflow: hidden;
 }
 
@@ -14,37 +13,31 @@ textarea {
     width: 100%;
     height: 200px;
     padding: 1rem;
-    border: 2px solid transparent;
-    border-radius: 8px;
-    background: white;
-    color: #333;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
     font-size: 0.9rem;
     line-height: 1.5;
     resize: vertical;
-    transition: all 0.3s ease;
+    transition: border-color var(--transition), box-shadow var(--transition);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--font-mono);
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
     appearance: none;
     -webkit-appearance: none;
-    border-radius: 8px;
     display: block;
-    box-sizing: border-box;
 }
 
-@media (min-width: 768px) {
-    textarea {
-        height: 250px;
-        padding: 1.5rem;
-        font-size: 1rem;
-    }
+textarea::placeholder {
+    color: var(--text-muted);
 }
 
 textarea:focus {
     outline: none;
-    border-color: #4a9eff;
+    border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -59,28 +52,18 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.7);
-    border-radius: 8px;
+    border-radius: var(--radius);
     border: 2px solid transparent;
-    color: #fff;
+    color: var(--text);
     font-size: 1rem;
     pointer-events: none;
     text-align: center;
     padding: 1rem;
-    box-sizing: border-box;
     height: 100%;
 }
 
-@media (min-width: 768px) {
-
-    .drag-overlay,
-    .processing-overlay {
-        font-size: 1.2rem;
-    }
-}
-
 .dragging textarea {
-    border-color: #4a9eff;
-    box-sizing: border-box;
+    border-color: var(--accent);
 }
 
 .processing textarea {
@@ -102,7 +85,51 @@ textarea:focus {
     justify-content: center;
 }
 
+.clean-button {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-family: var(--font);
+    cursor: not-allowed;
+    transition: all var(--transition);
+    min-height: 44px;
+    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.clean-button.active {
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .clean-button.active:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+    }
+}
+
+.clean-button.active:active {
+    transform: translateY(0);
+    background: var(--accent-active);
+}
+
 @media (min-width: 768px) {
+    textarea {
+        height: 250px;
+        padding: 1.5rem;
+        font-size: 1rem;
+    }
+
+    .drag-overlay,
+    .processing-overlay {
+        font-size: 1.2rem;
+    }
+
     .actions-container {
         flex-direction: row;
         justify-content: space-between;
@@ -113,39 +140,4 @@ textarea:focus {
         gap: 1rem;
         justify-content: flex-start;
     }
-}
-
-.clean-button {
-    padding: 0.6rem 1.2rem;
-    border: none;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.9rem;
-    cursor: not-allowed;
-    transition: all 0.2s ease;
-    min-height: 44px;
-    /* Minimum touch target size */
-    min-width: 44px;
-    -webkit-tap-highlight-color: transparent;
-    /* Remove tap highlight on mobile */
-}
-
-.clean-button.active {
-    background: #4a9eff;
-    color: #fff;
-    cursor: pointer;
-}
-
-/* Only apply hover effect on non-touch devices */
-@media (hover: hover) {
-    .clean-button.active:hover {
-        background: #3d8be6;
-        transform: translateY(-1px);
-    }
-}
-
-.clean-button.active:active {
-    transform: translateY(0);
-    background: #3680d8;
 }
