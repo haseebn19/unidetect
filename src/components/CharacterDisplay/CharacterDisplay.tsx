@@ -36,13 +36,14 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
         if (!text) return null;
 
         const result = [];
+        const chars = Array.from(text);
         let lastIndex = 0;
 
         for (let i = 0; i < hiddenChars.length; i++) {
             const current = hiddenChars[i];
 
             if (current.index > lastIndex) {
-                const textContent = text.substring(lastIndex, current.index);
+                const textContent = chars.slice(lastIndex, current.index).join('');
                 result.push(
                     <span key={`text-${i}`}>
                         {textContent}
@@ -76,8 +77,8 @@ const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hidde
             lastIndex = current.index + 1;
         }
 
-        if (lastIndex < text.length) {
-            const textContent = text.substring(lastIndex);
+        if (lastIndex < chars.length) {
+            const textContent = chars.slice(lastIndex).join('');
             result.push(
                 <span key="text-end">
                     {textContent}

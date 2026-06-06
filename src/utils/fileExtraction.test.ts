@@ -15,6 +15,16 @@ const { mockExtractRawText, mockGetDocument } = vi.hoisted(() => ({
 vi.mock('pdfjs-dist', () => ({
   getDocument: mockGetDocument,
   GlobalWorkerOptions: { workerSrc: '' },
+  OPS: {
+    setLeading: 36,
+    setTextMatrix: 42,
+    moveText: 40,
+    setLeadingMoveText: 41,
+    showText: 44,
+    showSpacedText: 45,
+    nextLineShowText: 46,
+    nextLineSetSpacingShowText: 47,
+  },
   version: '3.11.174',
 }));
 
@@ -188,6 +198,10 @@ describe('fileExtraction', () => {
             { str: ' line', transform: [1, 0, 0, 1, 50, 80] },
           ],
         }),
+        getOperatorList: vi.fn().mockResolvedValue({
+          fnArray: [],
+          argsArray: [],
+        }),
       };
 
       const mockPdf = {
@@ -207,6 +221,47 @@ describe('fileExtraction', () => {
       expect(result).toContain('line');
     });
 
+    it('should preserve hidden Unicode from PDF glyph operators when text content strips it', async () => {
+      const pdfContent = new ArrayBuffer(1024);
+      const pdfFile = new File([pdfContent], 'hidden.pdf', {
+        type: 'application/pdf',
+      });
+      const hiddenText = '1. Invoice number: INV\u200B-2026-001';
+
+      const mockPage = {
+        getTextContent: vi.fn().mockResolvedValue({
+          items: [
+            {
+              str: '1. Invoice number: INV-2026-001',
+              transform: [1, 0, 0, 1, 10, 100],
+            },
+          ],
+        }),
+        getOperatorList: vi.fn().mockResolvedValue({
+          fnArray: [42, 44],
+          argsArray: [
+            [1, 0, 0, 1, 10, 100],
+            [[...hiddenText].map(unicode => ({ unicode }))],
+          ],
+        }),
+      };
+
+      const mockPdf = {
+        numPages: 1,
+        getPage: vi.fn().mockResolvedValue(mockPage),
+      };
+
+      const mockLoadingTask = {
+        promise: Promise.resolve(mockPdf),
+      };
+
+      mockGetDocument.mockReturnValue(mockLoadingTask);
+
+      const result = await extractTextFromPDF(pdfFile);
+      expect(result).toBe(hiddenText);
+      expect(result).toContain('\u200B');
+    });
+
     it('should handle PDFs with no text content', async () => {
       const pdfContent = new ArrayBuffer(1024);
       const pdfFile = new File([pdfContent], 'test.pdf', {
@@ -215,6 +270,10 @@ describe('fileExtraction', () => {
 
       const mockPage = {
         getTextContent: vi.fn().mockResolvedValue({ items: [] }),
+        getOperatorList: vi.fn().mockResolvedValue({
+          fnArray: [],
+          argsArray: [],
+        }),
       };
 
       const mockPdf = {

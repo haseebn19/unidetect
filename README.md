@@ -20,7 +20,6 @@ A modern web application for detecting and cleaning hidden Unicode characters in
 
 - Node.js 18.x or higher
 - npm (Node Package Manager)
-- Docker & Docker Compose (optional, see [DOCKER.md](DOCKER.md))
 
 ## Installation
 

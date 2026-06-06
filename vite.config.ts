@@ -7,7 +7,7 @@ export default defineConfig({
   base: '/unidetect/',
   server: {
     port: 3000,
-    open: !process.env.DOCKER,
+    open: true,
   },
   build: {
     outDir: 'dist',

@@ -1,8 +1,201 @@
 import mammoth from 'mammoth';
-import {getDocument, GlobalWorkerOptions, version} from 'pdfjs-dist';
+import {getDocument, GlobalWorkerOptions, OPS, version} from 'pdfjs-dist';
+import {detectHiddenChars} from './unicodeHelpers';
 
 // Configure PDF.js worker
 GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`;
+
+interface PDFTextItemLike {
+    str: string;
+    transform?: number[];
+}
+
+interface PDFPageLike {
+    getOperatorList: () => Promise<{fnArray: number[]; argsArray: unknown[]}>;
+    getTextContent: () => Promise<{items: unknown[]}>;
+}
+
+interface PositionedTextItem {
+    str: string;
+    y: number;
+    order: number;
+}
+
+interface PDFGlyphLike {
+    unicode?: unknown;
+}
+
+const isPDFTextItem = (item: unknown): item is PDFTextItemLike => (
+    typeof item === 'object' &&
+    item !== null &&
+    'str' in item &&
+    typeof (item as PDFTextItemLike).str === 'string'
+);
+
+const isPDFGlyph = (value: unknown): value is PDFGlyphLike => (
+    typeof value === 'object' &&
+    value !== null &&
+    'unicode' in value
+);
+
+const countHiddenUnicodeChars = (text: string): number => (
+    detectHiddenChars(text).filter(char => char.type === 'hidden').length
+);
+
+const hasDetectableContent = (text: string): boolean => (
+    text.trim().length > 0 || countHiddenUnicodeChars(text) > 0
+);
+
+const normalizeExtractedLine = (line: string): string => (
+    line.trim().length > 0 ? line.trim() : line
+);
+
+const combinePositionedTextItems = (
+    items: PositionedTextItem[],
+    itemJoiner: string
+): string => {
+    const lines: Record<number, {parts: string[]; firstOrder: number}> = {};
+
+    items.forEach(item => {
+        if (!lines[item.y]) {
+            lines[item.y] = {parts: [], firstOrder: item.order};
+        }
+        lines[item.y].parts.push(item.str);
+    });
+
+    const sortedYPositions = Object.keys(lines)
+        .map(Number)
+        .sort((a, b) => b - a || lines[a].firstOrder - lines[b].firstOrder);
+
+    let pageText = '';
+    let lastY: number | null = null;
+
+    sortedYPositions.forEach(y => {
+        const line = normalizeExtractedLine(lines[y].parts.join(itemJoiner));
+        if (line) {
+            if (lastY !== null && Math.abs(y - lastY) > 15) {
+                pageText += '\n\n';
+            } else if (lastY !== null) {
+                pageText += '\n';
+            }
+            pageText += line;
+            lastY = y;
+        }
+    });
+
+    return pageText;
+};
+
+const extractTextContentText = async (page: PDFPageLike): Promise<string> => {
+    const content = await page.getTextContent();
+    const items: PositionedTextItem[] = [];
+
+    content.items.forEach((item, order) => {
+        if (!isPDFTextItem(item)) {
+            return;
+        }
+
+        const hiddenCount = countHiddenUnicodeChars(item.str);
+        if (!item.str.trim() && hiddenCount === 0) {
+            return;
+        }
+
+        const y = Array.isArray(item.transform) && typeof item.transform[5] === 'number'
+            ? Math.round(item.transform[5])
+            : 0;
+
+        items.push({str: item.str, y, order});
+    });
+
+    return combinePositionedTextItems(items, ' ');
+};
+
+const extractGlyphText = (value: unknown): string => {
+    if (Array.isArray(value)) {
+        return value.map(extractGlyphText).join('');
+    }
+
+    if (!isPDFGlyph(value) || typeof value.unicode !== 'string') {
+        return '';
+    }
+
+    return value.unicode;
+};
+
+const extractOperatorListText = async (page: PDFPageLike): Promise<string> => {
+    const operatorList = await page.getOperatorList();
+    const items: PositionedTextItem[] = [];
+    let currentY = 0;
+    let leading = 0;
+    let order = 0;
+
+    operatorList.fnArray.forEach((operation, index) => {
+        const args = operatorList.argsArray[index];
+
+        if (operation === OPS.setLeading && Array.isArray(args) && typeof args[0] === 'number') {
+            leading = args[0];
+            return;
+        }
+
+        if (operation === OPS.setTextMatrix && Array.isArray(args) && typeof args[5] === 'number') {
+            currentY = Math.round(args[5]);
+            return;
+        }
+
+        if (operation === OPS.moveText && Array.isArray(args) && typeof args[1] === 'number') {
+            currentY = Math.round(currentY + args[1]);
+            return;
+        }
+
+        if (operation === OPS.setLeadingMoveText && Array.isArray(args) && typeof args[1] === 'number') {
+            leading = -args[1];
+            currentY = Math.round(currentY + args[1]);
+            return;
+        }
+
+        if (
+            operation === OPS.nextLineShowText ||
+            operation === OPS.nextLineSetSpacingShowText
+        ) {
+            currentY = Math.round(currentY - leading);
+        }
+
+        if (
+            operation !== OPS.showText &&
+            operation !== OPS.showSpacedText &&
+            operation !== OPS.nextLineShowText &&
+            operation !== OPS.nextLineSetSpacingShowText
+        ) {
+            return;
+        }
+
+        const text = extractGlyphText(args);
+        if (text) {
+            items.push({str: text, y: currentY, order});
+            order++;
+        }
+    });
+
+    return combinePositionedTextItems(items, '');
+};
+
+const extractTextFromPDFPage = async (page: PDFPageLike): Promise<string> => {
+    const textContentText = await extractTextContentText(page);
+
+    try {
+        const operatorListText = await extractOperatorListText(page);
+        if (
+            countHiddenUnicodeChars(operatorListText) > countHiddenUnicodeChars(textContentText) ||
+            (!hasDetectableContent(textContentText) && hasDetectableContent(operatorListText))
+        ) {
+            return operatorListText;
+        }
+    } catch (error) {
+        console.warn('PDF operator-list extraction failed, falling back to text content:', error);
+    }
+
+    return textContentText;
+};
 
 /**
  * Extracts text content from a PDF file
@@ -22,53 +215,19 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
         const pdf = await loadingTask.promise;
         const numPages = pdf.numPages;
 
-        let fullText = '';
+        const pageTexts: string[] = [];
 
         // Process each page sequentially
         for (let i = 1; i <= numPages; i++) {
             const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-
-            // Group items by their vertical position to detect paragraphs
-            const lines: {[y: number]: string[]} = {};
-            content.items.forEach(item => {
-                if ('str' in item && item.str.trim()) {
-                    // Round the y position to handle slight variations
-                    const y = Math.round(item.transform[5]);
-                    if (!lines[y]) lines[y] = [];
-                    lines[y].push(item.str);
-                }
-            });
-
-            // Convert grouped items to text with proper line breaks
-            // Sort in descending order since PDF coordinates start from bottom
-            const sortedYPositions = Object.keys(lines)
-                .map(Number)
-                .sort((a, b) => b - a);
-
-            let pageText = '';
-            let lastY: number | null = null;
-
-            sortedYPositions.forEach(y => {
-                const line = lines[y].join(' ').trim();
-                if (line) {
-                    if (lastY !== null && Math.abs(y - lastY) > 15) {
-                        // Add double line break for paragraph separation
-                        pageText += '\n\n';
-                    } else if (lastY !== null) {
-                        // Add single line break for line separation
-                        pageText += '\n';
-                    }
-                    pageText += line;
-                    lastY = y;
-                }
-            });
-
-            fullText += pageText + '\n\n';
+            const pageText = await extractTextFromPDFPage(page);
+            if (pageText) {
+                pageTexts.push(pageText);
+            }
         }
 
-        const result = fullText.trim();
-        if (!result) {
+        const result = pageTexts.join('\n\n');
+        if (!hasDetectableContent(result)) {
             throw new Error('No readable text content found in this PDF. The file may contain only images or be password-protected.');
         }
 
@@ -130,7 +289,9 @@ export const extractTextFromFile = async (file: File): Promise<string> => {
         throw new Error('File is too large. Please use files smaller than 50MB.');
     }
 
-    const fileType = file.name.toLowerCase(); try {
+    const fileType = file.name.toLowerCase();
+
+    try {
         if (fileType.endsWith('.pdf')) {
             return await extractTextFromPDF(file);
         } else if (fileType.endsWith('.docx')) {

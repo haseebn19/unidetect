@@ -66,6 +66,25 @@ describe('useTextProcessor', () => {
     expect(cleanedText).toBe('HelloWorld Test');
   });
 
+  it('should keep hidden character positions aligned after surrogate pairs', () => {
+    const { result } = renderHook(() => useTextProcessor());
+    const textWithHidden = '\uD83D\uDE00a\u200Bb';
+
+    act(() => {
+      result.current.handleTextInput(textWithHidden);
+    });
+
+    expect(result.current.hiddenChars[0]).toEqual({
+      char: '\u200b',
+      code: 'Zero Width Space (U+200B)',
+      index: 2,
+      type: 'hidden',
+    });
+    expect(result.current.textStats.totalChars).toBe(4);
+    expect(result.current.textStats.visibleChars).toBe(3);
+    expect(result.current.cleanTextContent()).toBe('\uD83D\uDE00ab');
+  });
+
   it('should handle empty text input', () => {
     const { result } = renderHook(() => useTextProcessor());
 

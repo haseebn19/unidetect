@@ -22,6 +22,7 @@ export const processText = (rawText: string): {text: string; hiddenChars: Hidden
  * @returns Detailed text statistics
  */
 export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): TextStats => {
+    const chars = Array.from(text);
     let hiddenCount = 0;
     let newlineCount = 0;
     let spaces = 0;
@@ -41,8 +42,8 @@ export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): Tex
         }
     }
 
-    for (let i = 0; i < text.length; i++) {
-        const char = text[i];
+    for (let i = 0; i < chars.length; i++) {
+        const char = chars[i];
         if (char === ' ') {  // Count only spaces, not tabs (tabs are counted separately)
             spaces++;
         }
@@ -52,7 +53,7 @@ export const calculateTextStats = (text: string, hiddenChars: HiddenChar[]): Tex
     }
 
     return {
-        totalChars: text.length,
+        totalChars: chars.length,
         visibleChars,
         hiddenChars: hiddenCount,
         newlineChars: newlineCount,
@@ -86,12 +87,15 @@ export const cleanText = (text: string, hiddenChars: HiddenChar[]): string => {
 
     let cleanedText = '';
     const chars = Array.from(text);
+    const hiddenIndices = new Set(
+        hiddenChars
+            .filter(hiddenChar => hiddenChar.type === 'hidden')
+            .map(hiddenChar => hiddenChar.index)
+    );
 
     for (let i = 0; i < chars.length; i++) {
         const char = chars[i];
-        const isHidden = hiddenChars.some(hiddenChar =>
-            hiddenChar.index === i && hiddenChar.type === 'hidden'
-        );
+        const isHidden = hiddenIndices.has(i);
 
         if (isHidden) {
             const code = char.codePointAt(0);
