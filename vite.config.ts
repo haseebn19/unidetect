@@ -14,9 +14,9 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-pdf': ['pdfjs-dist'],
-          'vendor-docx': ['mammoth'],
+        manualChunks(id) {
+          if (id.includes('node_modules/pdfjs-dist/')) return 'vendor-pdf';
+          if (id.includes('node_modules/mammoth/')) return 'vendor-docx';
         },
       },
     },
