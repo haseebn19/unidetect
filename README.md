@@ -18,7 +18,7 @@ A modern web application for detecting and cleaning hidden Unicode characters in
 
 ## Prerequisites
 
-- Node.js 18.x or higher
+- Node.js 24.x LTS or higher
 - npm (Node Package Manager)
 
 ## Installation
