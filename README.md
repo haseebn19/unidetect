@@ -4,7 +4,7 @@
 
 <img src="public/logo.svg" alt="UniDetect Logo" width="250">
 
-A modern web application for detecting and cleaning hidden Unicode characters in text.
+A browser tool for finding and removing hidden Unicode characters in text and documents.
 
 ## Features
 
@@ -18,7 +18,7 @@ A modern web application for detecting and cleaning hidden Unicode characters in
 
 ## Prerequisites
 
-- Node.js 18.x or higher
+- Node.js 20.19+ or 22.12+
 - npm (Node Package Manager)
 
 ## Installation
