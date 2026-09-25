@@ -18,7 +18,7 @@ A browser tool for finding and removing hidden Unicode characters in text and do
 
 ## Prerequisites
 
-- Node.js 20.19+ or 22.12+
+- Node.js 22.13 or later
 - npm (Node Package Manager)
 
 ## Installation
