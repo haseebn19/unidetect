@@ -1,112 +1,76 @@
-import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import { useTextProcessor } from './useTextProcessor';
+import {renderHook, act} from '@testing-library/react';
+import {describe, it, expect} from 'vitest';
+import {useTextProcessor} from './useTextProcessor';
+
+const renderWithText = (text: string) => {
+    const hook = renderHook(() => useTextProcessor());
+    act(() => {
+        hook.result.current.setText(text);
+    });
+    return hook.result;
+};
 
 describe('useTextProcessor', () => {
-  it('should initialize with empty state', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    expect(result.current.text).toBe('');
-    expect(result.current.hiddenChars).toEqual([]);
-    expect(result.current.textStats.totalChars).toBe(0);
-  });
-
-  it('should process text input and detect hidden characters', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    const textWithHidden = 'Hello\u200bWorld';
-
-    act(() => {
-      result.current.handleTextInput(textWithHidden);
+    it('starts empty', () => {
+        const {result} = renderHook(() => useTextProcessor());
+        expect(result.current.text).toBe('');
+        expect(result.current.hiddenChars).toEqual([]);
+        expect(result.current.textStats.totalChars).toBe(0);
     });
 
-    expect(result.current.text).toBe('Hello\u200bWorld');
-    expect(result.current.hiddenChars).toHaveLength(1);
-    expect(result.current.hiddenChars[0]).toEqual({
-      char: '\u200b',
-      code: 'Zero Width Space (U+200B)',
-      index: 5,
-      type: 'hidden',
-    });
-  });
+    it('detects hidden characters in the text', () => {
+        const result = renderWithText('Hello\u200BWorld');
 
-  it('should preserve text exactly as-is', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    const textWithLF = 'Line 1\nLine 2\nLine 3';
-
-    act(() => {
-      result.current.handleTextInput(textWithLF);
-    });
-    expect(result.current.text).toBe('Line 1\nLine 2\nLine 3');
-  });
-
-  it('should calculate text statistics correctly', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    const text = 'Hello World!\nSecond line';
-    act(() => {
-      result.current.handleTextInput(text);
+        expect(result.current.text).toBe('Hello\u200BWorld');
+        expect(result.current.hiddenChars).toEqual([
+            {char: '\u200B', label: 'Zero Width Space (U+200B)', index: 5, type: 'hidden'}
+        ]);
     });
 
-    const stats = result.current.textStats;
-    expect(stats.totalChars).toBe(24);
-    expect(stats.visibleChars).toBe(24);
-    expect(stats.newlineChars).toBe(1);
-    expect(stats.spaces).toBe(2);
-  });
-
-  it('should clean text by removing hidden characters', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    // Test with zero-width space, word joiner, and no-break space
-    const textWithHidden = 'Hello\u200b\u2060World\u00a0Test';
-
-    act(() => {
-      result.current.handleTextInput(textWithHidden);
+    it('keeps the text exactly as entered', () => {
+        const result = renderWithText('Line 1\nLine 2\r\nLine 3');
+        expect(result.current.text).toBe('Line 1\nLine 2\r\nLine 3');
+        expect(result.current.analyzedText).toBe('Line 1\nLine 2\r\nLine 3');
     });
 
-    const cleanedText = result.current.cleanTextContent();
-    // Zero-width characters are removed, no-break space is replaced with regular space
-    expect(cleanedText).toBe('HelloWorld Test');
-  });
+    it('calculates text statistics', () => {
+        const stats = renderWithText('Hello World!\nSecond line').current.textStats;
 
-  it('should keep hidden character positions aligned after surrogate pairs', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    const textWithHidden = '\uD83D\uDE00a\u200Bb';
-
-    act(() => {
-      result.current.handleTextInput(textWithHidden);
+        expect(stats.totalChars).toBe(24);
+        expect(stats.visibleChars).toBe(24);
+        expect(stats.newlineChars).toBe(1);
+        expect(stats.spaces).toBe(2);
     });
 
-    expect(result.current.hiddenChars[0]).toEqual({
-      char: '\u200b',
-      code: 'Zero Width Space (U+200B)',
-      index: 2,
-      type: 'hidden',
-    });
-    expect(result.current.textStats.totalChars).toBe(4);
-    expect(result.current.textStats.visibleChars).toBe(3);
-    expect(result.current.cleanTextContent()).toBe('\uD83D\uDE00ab');
-  });
+    it('cleans the text in place and reports how many characters were removed', () => {
+        const result = renderWithText('Hello\u200B\u2060World\u00A0Test');
 
-  it('should handle empty text input', () => {
-    const { result } = renderHook(() => useTextProcessor());
+        let outcome: {cleaned: string; removedCount: number} | undefined;
+        act(() => {
+            outcome = result.current.cleanCurrentText();
+        });
 
-    act(() => {
-      result.current.handleTextInput('');
+        expect(outcome).toEqual({cleaned: 'HelloWorld Test', removedCount: 3});
+        expect(result.current.text).toBe('HelloWorld Test');
+        expect(result.current.hiddenChars).toEqual([]);
     });
 
-    expect(result.current.text).toBe('');
-    expect(result.current.hiddenChars).toEqual([]);
-    expect(result.current.textStats.totalChars).toBe(0);
-  });
+    it('keeps positions aligned after characters outside the BMP', () => {
+        const result = renderWithText('\u{1F600}a\u200Bb');
 
-  it('should handle text with only spaces', () => {
-    const { result } = renderHook(() => useTextProcessor());
-    const spacesText = '   ';
-
-    act(() => {
-      result.current.handleTextInput(spacesText);
+        expect(result.current.hiddenChars[0]).toEqual({
+            char: '\u200B',
+            label: 'Zero Width Space (U+200B)',
+            index: 2,
+            type: 'hidden'
+        });
+        expect(result.current.textStats.totalChars).toBe(4);
+        expect(result.current.textStats.visibleChars).toBe(3);
     });
 
-    expect(result.current.text).toBe('   ');
-    expect(result.current.textStats.spaces).toBe(3);
-    expect(result.current.textStats.visibleChars).toBe(3);
-  });
+    it('counts spaces as visible characters', () => {
+        const stats = renderWithText('   ').current.textStats;
+        expect(stats.spaces).toBe(3);
+        expect(stats.visibleChars).toBe(3);
+    });
 });

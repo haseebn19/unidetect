@@ -4,8 +4,7 @@
     margin-bottom: 1rem;
     backdrop-filter: blur(5px);
     overflow: hidden;
-    padding: 0.5rem;
-    transition: all 0.3s ease;
+    padding: 1rem;
 }
 
 .stats-container.has-hidden {
@@ -13,34 +12,21 @@
     animation: borderPulse 2s infinite ease-in-out;
 }
 
-.stats-header {
-    padding: 0.5rem;
-    border-radius: 6px;
-    margin: 0.5rem;
-    transition: background-color var(--transition);
-}
-
-.stats-header:hover {
-    background: var(--surface-hover);
-}
-
 .stats-row {
     display: flex;
     align-items: center;
     justify-content: space-around;
     flex-grow: 1;
-    margin-right: 2rem;
+    gap: 0.5rem;
 }
 
 .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: transparent;
     flex-grow: 1;
     padding: 0.5rem;
-    min-width: 120px;
-    transition: all 0.3s ease;
+    min-width: 0;
 }
 
 .stat-item.has-hidden {
@@ -59,7 +45,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
-    margin: 0.75rem;
+    margin: 0.25rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--line);
 }
@@ -74,6 +60,10 @@
     font-size: 1.75rem;
     font-weight: 600;
     margin-top: 0.25rem;
+}
+
+.stats-advanced[hidden] {
+    display: none;
 }
 
 @media (min-width: 768px) {

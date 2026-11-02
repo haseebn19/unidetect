@@ -1,21 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  extractTextFromFile,
-  extractTextFromPDF,
-  extractTextFromDOCX,
-} from './fileExtraction';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
+import {extractTextFromFile, FileReadError} from './fileExtraction';
 
-// Create mock functions using vi.hoisted to avoid hoisting issues
-const { mockExtractRawText, mockGetDocument } = vi.hoisted(() => ({
-  mockExtractRawText: vi.fn(),
-  mockGetDocument: vi.fn(),
+const {mockExtractRawText, mockGetDocument} = vi.hoisted(() => ({
+    mockExtractRawText: vi.fn(),
+    mockGetDocument: vi.fn()
 }));
 
-// Mock PDF.js
-vi.mock('pdfjs-dist', () => ({
-  getDocument: mockGetDocument,
-  GlobalWorkerOptions: { workerSrc: '' },
-  OPS: {
+// Operator codes from pdf.js, used by the operator list extraction
+const OPS = {
     setLeading: 36,
     setTextMatrix: 42,
     moveText: 40,
@@ -23,428 +15,126 @@ vi.mock('pdfjs-dist', () => ({
     showText: 44,
     showSpacedText: 45,
     nextLineShowText: 46,
-    nextLineSetSpacingShowText: 47,
-  },
-  version: '3.11.174',
-}));
+    nextLineSetSpacingShowText: 47
+};
 
-// Mock Mammoth with default export
-vi.mock('mammoth', () => ({
-  default: {
-    extractRawText: mockExtractRawText,
-  },
-}));
+vi.mock('pdfjs-dist', () => ({getDocument: mockGetDocument, GlobalWorkerOptions: {workerSrc: ''}, OPS}));
+vi.mock('pdfjs-dist/build/pdf.worker.min.mjs?url', () => ({default: '/pdf.worker.min.mjs'}));
+vi.mock('mammoth', () => ({default: {extractRawText: mockExtractRawText}}));
 
-// Create a mock File class that includes the missing browser methods
-class MockFile extends File {
-  private content: string | ArrayBuffer;
+const fileNamed = (name: string, content: BlobPart = 'content') => new File([content], name);
 
-  constructor(bits: BlobPart[], name: string, options?: FilePropertyBag) {
-    super(bits, name, options);
-    // Store the content for our mock methods
-    if (bits.length > 0) {
-      if (bits[0] instanceof ArrayBuffer) {
-        this.content = bits[0];
-      } else if (typeof bits[0] === 'string') {
-        this.content = bits[0];
-      } else {
-        this.content = bits.join('');
-      }
-    } else {
-      this.content = '';
-    }
-  }
-
-  async text(): Promise<string> {
-    if (this.content instanceof ArrayBuffer) {
-      // Try to decode as UTF-8, throw error if it's binary
-      try {
-        return new TextDecoder().decode(this.content);
-      } catch {
-        throw new Error('Cannot read binary data as text');
-      }
-    }
-    return this.content;
-  }
-  async arrayBuffer(): Promise<ArrayBuffer> {
-    if (this.content instanceof ArrayBuffer) {
-      return this.content;
-    }
-    // Convert string to ArrayBuffer
-    const encoder = new TextEncoder();
-    const uint8Array = encoder.encode(this.content);
-    // Create a proper ArrayBuffer from the Uint8Array
-    const buffer = new ArrayBuffer(uint8Array.length);
-    const view = new Uint8Array(buffer);
-    view.set(uint8Array);
-    return buffer;
-  }
+// A one-page PDF whose text content API returns `items` and whose operator list is `operators`
+function mockPdf(
+    items: {str: string; transform: number[]}[],
+    operators = {fnArray: [] as number[], argsArray: [] as unknown[]}
+) {
+    const page = {
+        getTextContent: vi.fn().mockResolvedValue({items}),
+        getOperatorList: vi.fn().mockResolvedValue(operators)
+    };
+    mockGetDocument.mockReturnValue({
+        promise: Promise.resolve({numPages: 1, getPage: vi.fn().mockResolvedValue(page)})
+    });
 }
 
-// Replace the global File constructor with our mock
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(globalThis as any).File = MockFile;
+const at = (y: number) => [1, 0, 0, 1, 10, y];
 
-describe('fileExtraction', () => {
-  describe('extractTextFromFile', () => {
-    it('should handle empty files', async () => {
-      const emptyFile = new File([], 'empty.txt', { type: 'text/plain' });
+beforeEach(() => {
+    vi.clearAllMocks();
+});
 
-      await expect(extractTextFromFile(emptyFile)).rejects.toThrow(
-        'File is empty or invalid'
-      );
-    });
-
-    it('should handle large files', async () => {
-      // Create a mock file larger than 50MB
-      const largeFileSize = 51 * 1024 * 1024; // 51MB
-      const largeFile = new File(['x'.repeat(largeFileSize)], 'large.txt', {
-        type: 'text/plain',
-      });
-
-      await expect(extractTextFromFile(largeFile)).rejects.toThrow(
-        'File is too large. Please use files smaller than 50MB.'
-      );
-    });
-
-    it('should extract text from TXT files', async () => {
-      const textContent = 'Hello world!\nThis is a test file.';
-      const txtFile = new File([textContent], 'test.txt', {
-        type: 'text/plain',
-      });
-
-      const result = await extractTextFromFile(txtFile);
-      expect(result).toBe(textContent);
-    });
-
-    it('should extract text from MD files', async () => {
-      const markdownContent = '# Hello World\n\nThis is **bold** text.';
-      const mdFile = new File([markdownContent], 'test.md', {
-        type: 'text/markdown',
-      });
-
-      const result = await extractTextFromFile(mdFile);
-      expect(result).toBe(markdownContent);
-    });
-    it('should handle empty text files', async () => {
-      const emptyTextFile = new File([''], 'empty.txt', { type: 'text/plain' });
-
-      await expect(extractTextFromFile(emptyTextFile)).rejects.toThrow(
-        'File is empty or invalid'
-      );
-    });
-
-    it('should handle whitespace-only text files', async () => {
-      const whitespaceFile = new File(['   \n\t  '], 'whitespace.txt', {
-        type: 'text/plain',
-      });
-
-      await expect(extractTextFromFile(whitespaceFile)).rejects.toThrow(
-        'Text file appears to be empty'
-      );
-    });
-
-    it('should try to read unknown file types as text', async () => {
-      const textContent = 'This is plain text content';
-      const unknownFile = new File([textContent], 'test.unknown', {
-        type: 'application/octet-stream',
-      });
-
-      const result = await extractTextFromFile(unknownFile);
-      expect(result).toBe(textContent);
-    });
-    it('should handle unsupported binary files', async () => {
-      // Create a binary file that can't be read as text
-      const binaryData = new Uint8Array([0xff, 0xfe, 0x00, 0x01]);
-      const binaryFile = new File([binaryData], 'test.bin', {
-        type: 'application/octet-stream',
-      });
-
-      // The binary data will be decoded as text, resulting in visible characters
-      // This test should expect success since the text() method will work
-      const result = await extractTextFromFile(binaryFile);
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('extractTextFromPDF', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
-    it('should handle empty PDF files', async () => {
-      const emptyPdfFile = new File([], 'empty.pdf', {
-        type: 'application/pdf',
-      });
-
-      await expect(extractTextFromPDF(emptyPdfFile)).rejects.toThrow(
-        'PDF file appears to be empty or corrupted'
-      );
-    });
-
-    it('should extract text from valid PDF', async () => {
-      const pdfContent = new ArrayBuffer(1024);
-      const pdfFile = new File([pdfContent], 'test.pdf', {
-        type: 'application/pdf',
-      });
-
-      const mockPage = {
-        getTextContent: vi.fn().mockResolvedValue({
-          items: [
-            { str: 'Hello', transform: [1, 0, 0, 1, 10, 100] },
-            { str: ' ', transform: [1, 0, 0, 1, 50, 100] },
-            { str: 'World', transform: [1, 0, 0, 1, 60, 100] },
-            { str: 'Second', transform: [1, 0, 0, 1, 10, 80] },
-            { str: ' line', transform: [1, 0, 0, 1, 50, 80] },
-          ],
-        }),
-        getOperatorList: vi.fn().mockResolvedValue({
-          fnArray: [],
-          argsArray: [],
-        }),
-      };
-
-      const mockPdf = {
-        numPages: 1,
-        getPage: vi.fn().mockResolvedValue(mockPage),
-      };
-
-      const mockLoadingTask = {
-        promise: Promise.resolve(mockPdf),
-      };
-
-      mockGetDocument.mockReturnValue(mockLoadingTask);
-
-      const result = await extractTextFromPDF(pdfFile);
-      expect(result).toContain('Hello World');
-      expect(result).toContain('Second');
-      expect(result).toContain('line');
-    });
-
-    it('should preserve hidden Unicode from PDF glyph operators when text content strips it', async () => {
-      const pdfContent = new ArrayBuffer(1024);
-      const pdfFile = new File([pdfContent], 'hidden.pdf', {
-        type: 'application/pdf',
-      });
-      const hiddenText = '1. Invoice number: INV\u200B-2026-001';
-
-      const mockPage = {
-        getTextContent: vi.fn().mockResolvedValue({
-          items: [
-            {
-              str: '1. Invoice number: INV-2026-001',
-              transform: [1, 0, 0, 1, 10, 100],
-            },
-          ],
-        }),
-        getOperatorList: vi.fn().mockResolvedValue({
-          fnArray: [42, 44],
-          argsArray: [
-            [1, 0, 0, 1, 10, 100],
-            [[...hiddenText].map(unicode => ({ unicode }))],
-          ],
-        }),
-      };
-
-      const mockPdf = {
-        numPages: 1,
-        getPage: vi.fn().mockResolvedValue(mockPage),
-      };
-
-      const mockLoadingTask = {
-        promise: Promise.resolve(mockPdf),
-      };
-
-      mockGetDocument.mockReturnValue(mockLoadingTask);
-
-      const result = await extractTextFromPDF(pdfFile);
-      expect(result).toBe(hiddenText);
-      expect(result).toContain('\u200B');
-    });
-
-    it('should handle PDFs with no text content', async () => {
-      const pdfContent = new ArrayBuffer(1024);
-      const pdfFile = new File([pdfContent], 'test.pdf', {
-        type: 'application/pdf',
-      });
-
-      const mockPage = {
-        getTextContent: vi.fn().mockResolvedValue({ items: [] }),
-        getOperatorList: vi.fn().mockResolvedValue({
-          fnArray: [],
-          argsArray: [],
-        }),
-      };
-
-      const mockPdf = {
-        numPages: 1,
-        getPage: vi.fn().mockResolvedValue(mockPage),
-      };
-
-      const mockLoadingTask = {
-        promise: Promise.resolve(mockPdf),
-      };
-
-      mockGetDocument.mockReturnValue(mockLoadingTask);
-
-      await expect(extractTextFromPDF(pdfFile)).rejects.toThrow(
-        'No readable text content found in this PDF'
-      );
-    });
-
-    it('should handle PDF processing errors', async () => {
-      const pdfContent = new ArrayBuffer(1024);
-      const pdfFile = new File([pdfContent], 'corrupted.pdf', {
-        type: 'application/pdf',
-      });
-
-      mockGetDocument.mockImplementation(() => {
-        throw new Error('PDF parsing failed');
-      });
-
-      await expect(extractTextFromPDF(pdfFile)).rejects.toThrow(
-        'PDF parsing failed'
-      );
-    });
-  });
-
-  describe('extractTextFromDOCX', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
-    it('should handle empty DOCX files', async () => {
-      const emptyDocxFile = new File([], 'empty.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      await expect(extractTextFromDOCX(emptyDocxFile)).rejects.toThrow(
-        'DOCX file appears to be empty or corrupted'
-      );
-    });
-
-    it('should extract text from valid DOCX', async () => {
-      const docxContent = new ArrayBuffer(1024);
-      const docxFile = new File([docxContent], 'test.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      mockExtractRawText.mockResolvedValue({
-        value: 'Hello World!\nThis is a DOCX document.',
-        messages: [],
-      });
-
-      const result = await extractTextFromDOCX(docxFile);
-      expect(result).toBe('Hello World!\nThis is a DOCX document.');
-      expect(mockExtractRawText).toHaveBeenCalledWith({
-        arrayBuffer: expect.any(ArrayBuffer),
-      });
-    });
-
-    it('should handle DOCX files with no text content', async () => {
-      const docxContent = new ArrayBuffer(1024);
-      const docxFile = new File([docxContent], 'empty-content.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      mockExtractRawText.mockResolvedValue({
-        value: '   \n\t  ',
-        messages: [],
-      });
-
-      await expect(extractTextFromDOCX(docxFile)).rejects.toThrow(
-        'No readable text content found in this DOCX file'
-      );
-    });
-
-    it('should handle DOCX processing errors', async () => {
-      const docxContent = new ArrayBuffer(1024);
-      const docxFile = new File([docxContent], 'corrupted.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      mockExtractRawText.mockRejectedValue(new Error('DOCX parsing failed'));
-
-      await expect(extractTextFromDOCX(docxFile)).rejects.toThrow(
-        'DOCX parsing failed'
-      );
-    });
-  });
-
-  describe('file type detection', () => {
-    it('should handle different text file extensions', async () => {
-      const testCases = [
-        { name: 'test.txt', content: 'Text file' },
-        { name: 'test.text', content: 'Text file' },
-        { name: 'README.md', content: '# Markdown' },
-        { name: 'doc.markdown', content: '## Markdown doc' },
-      ];
-
-      for (const testCase of testCases) {
-        const file = new File([testCase.content], testCase.name, {
-          type: 'text/plain',
-        });
-        const result = await extractTextFromFile(file);
-        expect(result).toBe(testCase.content);
-      }
-    });
-
-    it('should handle case-insensitive file extensions', async () => {
-      const content = 'Test content';
-      const testCases = ['test.TXT', 'test.PDF', 'test.DOCX', 'test.MD'];
-
-      for (const fileName of testCases) {
-        const file = new File([content], fileName, { type: 'text/plain' });
-
-        if (fileName.endsWith('.TXT') || fileName.endsWith('.MD')) {
-          const result = await extractTextFromFile(file);
-          expect(result).toBe(content);
+describe('extractTextFromFile', () => {
+    it('reads text and Markdown files as they are', async () => {
+        for (const name of ['notes.txt', 'notes.text', 'README.md', 'guide.markdown', 'NOTES.TXT', 'notes.log']) {
+            await expect(extractTextFromFile(fileNamed(name, '# Title\n\nBody'))).resolves.toBe('# Title\n\nBody');
         }
-      }
-    });
-  });
-
-  describe('error handling', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
     });
 
-    it('should handle null or undefined files', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(extractTextFromFile(null as any)).rejects.toThrow(
-        'File is empty or invalid'
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await expect(extractTextFromFile(undefined as any)).rejects.toThrow(
-        'File is empty or invalid'
-      );
+    it('rejects empty and oversized files', async () => {
+        await expect(extractTextFromFile(fileNamed('empty.txt', ''))).rejects.toThrow('This file is empty.');
+
+        const large = fileNamed('large.txt');
+        Object.defineProperty(large, 'size', {value: 51 * 1024 * 1024});
+        await expect(extractTextFromFile(large)).rejects.toThrow('smaller than 50 MB');
     });
 
-    it('should preserve original error messages from extraction functions', async () => {
-      const docxContent = new ArrayBuffer(1024);
-      const docxFile = new File([docxContent], 'test.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
-
-      const customError = new Error('Custom extraction error');
-      mockExtractRawText.mockRejectedValue(customError);
-
-      await expect(extractTextFromFile(docxFile)).rejects.toThrow(
-        'Custom extraction error'
-      );
+    it('rejects binary files', async () => {
+        const binary = fileNamed('photo.bin', new Uint8Array([0xff, 0xfe, 0x00, 0x01]));
+        await expect(extractTextFromFile(binary)).rejects.toThrow('This file type is not supported.');
     });
-    it('should handle generic errors gracefully', async () => {
-      const docxContent = new ArrayBuffer(1024);
-      const docxFile = new File([docxContent], 'test.docx', {
-        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      });
 
-      // Throw a non-Error object
-      mockExtractRawText.mockRejectedValue('String error');
-
-      await expect(extractTextFromFile(docxFile)).rejects.toThrow(
-        'Failed to process DOCX file'
-      );
+    it('rejects files with only regular whitespace, but keeps unusual spaces', async () => {
+        await expect(extractTextFromFile(fileNamed('blank.txt', '   \n\t  '))).rejects.toThrow(
+            'only spaces and line breaks'
+        );
+        await expect(extractTextFromFile(fileNamed('nbsp.txt', '\u00A0'))).resolves.toBe('\u00A0');
     });
-  });
+
+    it('reports problems with a FileReadError', async () => {
+        await expect(extractTextFromFile(fileNamed('empty.txt', ''))).rejects.toBeInstanceOf(FileReadError);
+    });
+});
+
+describe('PDF files', () => {
+    it('joins items on the same line and separates lines and paragraphs', async () => {
+        mockPdf([
+            {str: 'Hello', transform: at(100)},
+            {str: ' ', transform: at(100)},
+            {str: 'World', transform: at(100)},
+            {str: 'Next line', transform: at(88)},
+            {str: 'New paragraph', transform: at(60)}
+        ]);
+
+        await expect(extractTextFromFile(fileNamed('doc.pdf'))).resolves.toBe(
+            'Hello World\nNext line\n\nNew paragraph'
+        );
+    });
+
+    it('keeps unusual spaces at the start and end of a line', async () => {
+        mockPdf([{str: '\u00A0Total\u3000 ', transform: at(100)}]);
+
+        await expect(extractTextFromFile(fileNamed('doc.pdf'))).resolves.toBe('\u00A0Total\u3000');
+    });
+
+    it('uses the glyph text when the text content API drops hidden characters', async () => {
+        const hiddenText = 'Invoice INV\u200B-2026-001';
+        mockPdf([{str: 'Invoice INV-2026-001', transform: at(100)}], {
+            fnArray: [OPS.setTextMatrix, OPS.showText],
+            argsArray: [at(100), [[...hiddenText].map((unicode) => ({unicode}))]]
+        });
+
+        await expect(extractTextFromFile(fileNamed('invoice.pdf'))).resolves.toBe(hiddenText);
+    });
+
+    it('explains PDFs without text and PDFs that cannot be opened', async () => {
+        mockPdf([]);
+        await expect(extractTextFromFile(fileNamed('scan.pdf'))).rejects.toThrow('No text found in this PDF.');
+
+        mockGetDocument.mockReturnValue({promise: Promise.reject(new Error('Invalid PDF structure.'))});
+        await expect(extractTextFromFile(fileNamed('broken.pdf'))).rejects.toThrow(
+            'Could not open this PDF. It may be damaged or password-protected.'
+        );
+    });
+});
+
+describe('DOCX files', () => {
+    it('returns the document text', async () => {
+        mockExtractRawText.mockResolvedValue({value: 'Hello World!\nThis is a DOCX document.', messages: []});
+
+        await expect(extractTextFromFile(fileNamed('letter.DOCX'))).resolves.toBe(
+            'Hello World!\nThis is a DOCX document.'
+        );
+        expect(mockExtractRawText).toHaveBeenCalledWith({arrayBuffer: expect.any(ArrayBuffer)});
+    });
+
+    it('explains documents without text and documents that cannot be opened', async () => {
+        mockExtractRawText.mockResolvedValue({value: '   \n\t  ', messages: []});
+        await expect(extractTextFromFile(fileNamed('blank.docx'))).rejects.toThrow('No text found in this DOCX file.');
+
+        mockExtractRawText.mockRejectedValue(new Error("Can't find end of central directory"));
+        await expect(extractTextFromFile(fileNamed('broken.docx'))).rejects.toThrow(
+            'Could not open this DOCX file. It may be damaged or password-protected.'
+        );
+    });
 });

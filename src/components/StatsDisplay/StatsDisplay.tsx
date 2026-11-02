@@ -1,85 +1,60 @@
-import React, {memo, useState} from 'react';
-import {TextStats} from '../../types';
+import {memo, useState} from 'react';
+import type {TextStats} from '../../types';
 import './StatsDisplay.css';
 
-/**
- * Props for the StatsDisplay component
- */
 interface StatsDisplayProps {
     stats: TextStats;
 }
 
 /**
- * Component for displaying text analysis statistics
- * Shows simplified stats by default with an option to expand for more details
+ * Shows visible and hidden character counts, with more detail on request.
  */
-const StatsDisplayComponent: React.FC<StatsDisplayProps> = ({stats}) => {
-    const [showAdvanced, setShowAdvanced] = useState(false);
+const StatsDisplayComponent = ({stats}: StatsDisplayProps) => {
+    const [showDetails, setShowDetails] = useState(false);
+    const hasHidden = stats.hiddenChars > 0;
 
-    const toggleAdvanced = () => {
-        setShowAdvanced(prev => !prev);
-    };
+    const details = [
+        {label: 'Characters', value: stats.totalChars},
+        {label: 'Line breaks', value: stats.newlineChars},
+        {label: 'Tabs', value: stats.tabChars},
+        {label: 'Spaces', value: stats.spaces},
+        {label: 'Bytes', value: stats.bytes}
+    ];
 
     return (
-        <div className={`stats-container ${stats.hiddenChars > 0 ? 'has-hidden' : ''}`}>
-            {/* Main stats display - always shown */}
-            <div
-                className="summary-header stats-header"
-                onClick={toggleAdvanced}
-                role="button"
-                tabIndex={0}
-                aria-expanded={showAdvanced}
+        <section className={`stats-container ${hasHidden ? 'has-hidden' : ''}`} aria-label="Text statistics">
+            <button
+                type="button"
+                className="summary-header"
+                aria-expanded={showDetails}
                 aria-controls="stats-details"
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleAdvanced();
-                    }
-                }}
+                onClick={() => setShowDetails((shown) => !shown)}
             >
-                <div className="stats-row">
-                    <div className="stat-item">
-                        <span className="stat-label">Non-Hidden:</span>
+                <span className="stats-row">
+                    <span className="stat-item">
+                        <span className="stat-label">Visible</span>
                         <span className="stat-value">{stats.visibleChars}</span>
-                    </div>
-                    <div className={`stat-item ${stats.hiddenChars > 0 ? 'has-hidden' : ''}`}>
-                        <span className="stat-label">Hidden:</span>
+                    </span>
+                    <span className={`stat-item ${hasHidden ? 'has-hidden' : ''}`}>
+                        <span className="stat-label">Hidden</span>
                         <span className="stat-value">{stats.hiddenChars}</span>
-                    </div>
-                </div>
-                <button
-                    className={`summary-toggle ${showAdvanced ? 'expanded' : ''}`}
-                    aria-label={showAdvanced ? 'Hide Details' : 'Show Details'}
-                >
+                    </span>
+                </span>
+                <span className={`summary-toggle ${showDetails ? 'expanded' : ''}`} aria-hidden="true">
                     ▼
-                </button>
-            </div>
+                </span>
+                <span className="visually-hidden">{showDetails ? 'Hide details' : 'Show details'}</span>
+            </button>
 
-            <div className={`summary-content ${showAdvanced ? 'expanded' : ''}`}>
-                <div className="stats-advanced">
-                    <div className="stat-item">
-                        <span className="stat-label">Total Chars:</span>
-                        <span className="stat-value">{stats.totalChars}</span>
+            <dl id="stats-details" className="stats-advanced" hidden={!showDetails}>
+                {details.map(({label, value}) => (
+                    <div key={label} className="stat-item">
+                        <dt className="stat-label">{label}</dt>
+                        <dd className="stat-value">{value}</dd>
                     </div>
-                    <div className="stat-item">
-                        <span className="stat-label">Newlines:</span>
-                        <span className="stat-value">{stats.newlineChars}</span>
-                    </div>
-                    <div className="stat-item">
-                        <span className="stat-label">Tabs:</span>
-                        <span className="stat-value">{stats.tabChars}</span>
-                    </div>
-                    <div className="stat-item">
-                        <span className="stat-label">Spaces:</span>
-                        <span className="stat-value">{stats.spaces}</span>
-                    </div>
-                    <div className="stat-item">
-                        <span className="stat-label">Bytes:</span>
-                        <span className="stat-value">{stats.bytes}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+                ))}
+            </dl>
+        </section>
     );
 };
 

@@ -1,38 +1,31 @@
 /**
- * Represents a hidden character found in text
+ * A hidden character, line break, or tab found in text.
  */
 export interface HiddenChar {
-    /** The actual character */
     char: string;
-    /** Position in the text */
+    /** Code point position in the text */
     index: number;
-    /** Unicode code point and name */
-    code: string;
-    /** Type of hidden character */
+    /** Readable name and code point, such as "Zero Width Space (U+200B)" */
+    label: string;
+    /** Hidden characters are flagged; line breaks and tabs are only marked */
     type: 'hidden' | 'newline' | 'tab';
 }
 
 /**
- * Statistics about the analyzed text
+ * Counts for the analyzed text. Character counts are in code points.
  */
 export interface TextStats {
-    /** Total number of characters */
     totalChars: number;
-    /** Number of visible characters (including tabs and newlines) */
+    /** Code points that are not hidden, including spaces, tabs, and line breaks */
     visibleChars: number;
-    /** Number of hidden characters */
     hiddenChars: number;
-    /** Number of newline characters (also included in visibleChars) */
+    /** CR and LF characters */
     newlineChars: number;
-    /** Number of tab characters (also included in visibleChars) */
     tabChars: number;
-    /** Total size in bytes */
+    /** Size of the text when encoded as UTF-8 */
     bytes: number;
-    /** Number of space characters */
+    /** Ordinary space characters */
     spaces: number;
 }
 
-/**
- * Types of status messages
- */
-export type MessageType = 'success' | 'info' | 'error';
+export type MessageType = 'success' | 'error';

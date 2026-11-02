@@ -1,145 +1,94 @@
-import {HiddenChar} from '../types';
+import type {HiddenChar} from '../types';
+
+// Characters that render as nothing: zero-width spaces and joiners, bidirectional controls,
+// variation selectors, tag characters, fillers, and similar format characters.
+const INVISIBLE = /\p{Default_Ignorable_Code_Point}/u;
+// Whitespace other than the ordinary space, tab, LF, and CR is checked separately.
+const WHITE_SPACE = /\p{White_Space}/u;
+// Control codes, private use, unassigned code points, and unpaired surrogates.
+const CONTROL_OR_UNASSIGNED = /[\p{Cc}\p{Co}\p{Cn}\p{Cs}]/u;
+// Whitespace characters that act as line breaks. Cleaning turns these into LF.
+const LINE_BREAKS = new Set(['\v', '\f', '\u0085', '\u2028', '\u2029']);
+
+const EMOJI = /\p{Emoji}/u;
+const PICTOGRAPHIC = /\p{Extended_Pictographic}/u;
+const EMOJI_MODIFIER = /\p{Emoji_Modifier}/u;
+const ZERO_WIDTH_JOINER = '\u200D';
+const TEXT_PRESENTATION_SELECTOR = '\uFE0E';
+const EMOJI_PRESENTATION_SELECTOR = '\uFE0F';
 
 /**
- * Determines the Unicode category of a character
- * This is a simplified version that covers the main categories
- * L = Letter, N = Number, P = Punctuation, S = Symbol, Z = Separator, etc.
- * 
- * @param char The character to categorize
- * @returns The Unicode category abbreviation
+ * Returns true when the character at `index` is a legitimate part of an emoji sequence:
+ * a presentation selector after an emoji, or a joiner between two pictographs.
  */
-const getUnicodeCategory = (char: string): string => {
-    // Use regex to determine character category
-    if (/^\p{L}$/u.test(char)) return 'L'; // Letter
-    if (/^\p{N}$/u.test(char)) return 'N'; // Number
-    if (/^\p{P}$/u.test(char)) return 'P'; // Punctuation
-    if (/^\p{S}$/u.test(char)) return 'S'; // Symbol
-    if (/^\p{Z}$/u.test(char)) return 'Z'; // Separator/space
-    if (/^\p{M}$/u.test(char)) return 'M'; // Mark
-    if (/^\p{C}$/u.test(char)) return 'C'; // Control/format
+const isPartOfEmojiSequence = (chars: string[], index: number): boolean => {
+    const char = chars[index];
 
-    // Default category for anything else
-    return 'O'; // Other
+    if (char === TEXT_PRESENTATION_SELECTOR || char === EMOJI_PRESENTATION_SELECTOR) {
+        return EMOJI.test(chars[index - 1] ?? '');
+    }
+
+    if (char === ZERO_WIDTH_JOINER) {
+        let previous = index - 1;
+        while (
+            previous >= 0 &&
+            (chars[previous] === EMOJI_PRESENTATION_SELECTOR || EMOJI_MODIFIER.test(chars[previous]))
+        ) {
+            previous--;
+        }
+        return PICTOGRAPHIC.test(chars[previous] ?? '') && PICTOGRAPHIC.test(chars[index + 1] ?? '');
+    }
+
+    return false;
 };
 
 /**
- * Detects hidden and special characters in text input
- * @param input Text to analyze
- * @returns Array of hidden characters with their positions and types
+ * Returns true when the character at `index` is invisible or unexpected in plain text.
+ * Tabs and line breaks are handled separately by `detectHiddenChars`.
+ */
+const isHiddenChar = (chars: string[], index: number): boolean => {
+    const char = chars[index];
+    if (char === ' ' || isPartOfEmojiSequence(chars, index)) {
+        return false;
+    }
+    return INVISIBLE.test(char) || WHITE_SPACE.test(char) || CONTROL_OR_UNASSIGNED.test(char);
+};
+
+/**
+ * Detects hidden characters, line breaks, and tabs in text.
+ * Indexes are code point positions, so characters outside the BMP count as one position.
  */
 export const detectHiddenChars = (input: string): HiddenChar[] => {
-    const hidden: HiddenChar[] = [];
-    // Use array spread with String.prototype[Symbol.iterator] to properly handle surrogate pairs
-    const chars = [...input];
+    const chars = Array.from(input);
+    const found: HiddenChar[] = [];
 
-    for (let i = 0; i < chars.length; i++) {
-        const char = chars[i];
-        const code = char.codePointAt(0);
-        if (!code) {
-            continue;
-        }
-
-        // Handle newline characters individually
+    chars.forEach((char, index) => {
         if (char === '\r' || char === '\n') {
-            hidden.push({
-                char,
-                index: i,
-                code: char === '\r' ? 'CR (U+000D)' : 'LF (U+000A)',
-                type: 'newline'
-            });
-            continue;
+            found.push({char, index, label: char === '\r' ? 'CR (U+000D)' : 'LF (U+000A)', type: 'newline'});
+        } else if (char === '\t') {
+            found.push({char, index, label: 'Tab (U+0009)', type: 'tab'});
+        } else if (isHiddenChar(chars, index)) {
+            found.push({char, index, label: describeCodePoint(char.codePointAt(0)!), type: 'hidden'});
         }
+    });
 
-        // Handle tab characters
-        if (char === '\t') {
-            hidden.push({
-                char,
-                index: i,
-                code: 'TAB (U+0009)',
-                type: 'tab'
-            });
-            continue;
-        }
-
-        if (isHiddenCharacter(char, code)) {
-            const codeName = getUnicodeCodeName(code);
-            hidden.push({
-                char,
-                index: i,
-                code: codeName,
-                type: 'hidden'
-            });
-        }
-    }
-
-    return hidden;
+    return found;
 };
 
+export const countHiddenChars = (text: string): number =>
+    detectHiddenChars(text).filter((char) => char.type === 'hidden').length;
+
 /**
- * Check for hidden characters
- * @param char The character to check
- * @param code The Unicode code point
- * @returns True if the character is hidden/non-printable
+ * Returns what a hidden character becomes when text is cleaned: unusual spaces become a
+ * regular space, line and paragraph separators become LF, and everything else is removed.
  */
-const isHiddenCharacter = (char: string, code: number): boolean => {
-    // Special space characters
-    if (code === 0x205F ||
-        code === 0x00A0 ||
-        code === 0x202F ||
-        (code >= 0x2000 && code <= 0x200A) ||
-        code === 0x3000)
-        return true;
-
-    // Word joiners, zero-width characters, and other special format characters
-    if ((code >= 0x2060 && code <= 0x206F) ||
-        (code >= 0x200B && code <= 0x200F) ||
-        code === 0xFEFF)
-        return true;
-
-    // Control characters
-    if ((code >= 0x00 && code <= 0x1F) || (code >= 0x7F && code <= 0x9F)) {
-        return code !== 0x09 && code !== 0x0A && code !== 0x0D;
-    }
-
-    // Arabic Letter Mark and Mongolian Vowel Separator
-    if (code === 0x061C || code === 0x180E)
-        return true;
-
-    const category = getUnicodeCategory(char);
-
-    if (category === 'L' || category === 'N' || category === 'P' || category === 'S') {
-        return false;
-    }
-
-    if (code === 0x0020) {
-        return false;
-    }
-
-    // For everything else, consider it potentially hidden or special
-    return true;
+export const replacementFor = (char: string): string => {
+    if (LINE_BREAKS.has(char)) return '\n';
+    if (WHITE_SPACE.test(char)) return ' ';
+    return '';
 };
 
-/**
- * Unicode character names for common hidden/special characters
- */
 const UNICODE_NAMES: Record<number, string> = {
-    // Zero-width and invisible characters
-    0x200B: 'Zero Width Space',
-    0x200C: 'Zero Width Non-Joiner',
-    0x200D: 'Zero Width Joiner',
-    0x200E: 'Left-to-Right Mark',
-    0x200F: 'Right-to-Left Mark',
-    0x2060: 'Word Joiner',
-    0x2061: 'Function Application',
-    0x2062: 'Invisible Times',
-    0x2063: 'Invisible Separator',
-    0x2064: 'Invisible Plus',
-    0x2066: 'Left-to-Right Isolate',
-    0x2067: 'Right-to-Left Isolate',
-    0x2068: 'First Strong Isolate',
-    0x2069: 'Pop Directional Isolate',
-    0xFEFF: 'Byte Order Mark',
-
     // Control characters
     0x0000: 'Null',
     0x0001: 'Start of Heading',
@@ -147,17 +96,15 @@ const UNICODE_NAMES: Record<number, string> = {
     0x0003: 'End of Text',
     0x0007: 'Bell',
     0x0008: 'Backspace',
-    0x0009: 'Character Tabulation',
-    0x000A: 'Line Feed',
-    0x000B: 'Line Tabulation',
-    0x000C: 'Form Feed',
-    0x000D: 'Carriage Return',
-    0x001B: 'Escape',
-    0x007F: 'Delete',
+    0x000b: 'Line Tabulation',
+    0x000c: 'Form Feed',
+    0x001b: 'Escape',
+    0x007f: 'Delete',
     0x0085: 'Next Line',
 
-    // Space characters
-    0x00A0: 'No-Break Space',
+    // Spaces
+    0x00a0: 'No-Break Space',
+    0x1680: 'Ogham Space Mark',
     0x2000: 'En Quad',
     0x2001: 'Em Quad',
     0x2002: 'En Space',
@@ -168,69 +115,81 @@ const UNICODE_NAMES: Record<number, string> = {
     0x2007: 'Figure Space',
     0x2008: 'Punctuation Space',
     0x2009: 'Thin Space',
-    0x200A: 'Hair Space',
-    0x202F: 'Narrow No-Break Space',
-    0x205F: 'Medium Mathematical Space',
-    0x3000: 'Ideographic Space',    // Other format characters
-    0x061C: 'Arabic Letter Mark',
-    0x180E: 'Mongolian Vowel Separator',
+    0x200a: 'Hair Space',
     0x2028: 'Line Separator',
     0x2029: 'Paragraph Separator',
-    0x00AD: 'Soft Hyphen',
-    0x034F: 'Combining Grapheme Joiner',
-    0x115F: 'Hangul Choseong Filler',
+    0x202f: 'Narrow No-Break Space',
+    0x205f: 'Medium Mathematical Space',
+    0x3000: 'Ideographic Space',
+
+    // Zero-width and joining characters
+    0x00ad: 'Soft Hyphen',
+    0x034f: 'Combining Grapheme Joiner',
+    0x200b: 'Zero Width Space',
+    0x200c: 'Zero Width Non-Joiner',
+    0x200d: 'Zero Width Joiner',
+    0x2060: 'Word Joiner',
+    0x2061: 'Function Application',
+    0x2062: 'Invisible Times',
+    0x2063: 'Invisible Separator',
+    0x2064: 'Invisible Plus',
+    0xfeff: 'Byte Order Mark',
+
+    // Bidirectional text controls
+    0x061c: 'Arabic Letter Mark',
+    0x200e: 'Left-to-Right Mark',
+    0x200f: 'Right-to-Left Mark',
+    0x202a: 'Left-to-Right Embedding',
+    0x202b: 'Right-to-Left Embedding',
+    0x202c: 'Pop Directional Formatting',
+    0x202d: 'Left-to-Right Override',
+    0x202e: 'Right-to-Left Override',
+    0x2066: 'Left-to-Right Isolate',
+    0x2067: 'Right-to-Left Isolate',
+    0x2068: 'First Strong Isolate',
+    0x2069: 'Pop Directional Isolate',
+
+    // Fillers and other invisible format characters
+    0x115f: 'Hangul Choseong Filler',
     0x1160: 'Hangul Jungseong Filler',
-    0x17B4: 'Khmer Vowel Inherent AQ',
-    0x17B5: 'Khmer Vowel Inherent AA'
+    0x17b4: 'Khmer Vowel Inherent AQ',
+    0x17b5: 'Khmer Vowel Inherent AA',
+    0x180e: 'Mongolian Vowel Separator',
+    0x3164: 'Hangul Filler',
+    0xffa0: 'Halfwidth Hangul Filler',
+    0xe0001: 'Language Tag',
+    0xe007f: 'Cancel Tag'
 };
 
-
-
-/**
- * Maps Unicode ranges to human-readable descriptions
- */
 const UNICODE_RANGES: Array<[number, number, string]> = [
-    [0x0000, 0x001F, 'Control Character'],
-    [0x007F, 0x009F, 'Control Character'],
-    [0x0080, 0x00FF, 'Latin-1 Supplement'],
-    [0x0100, 0x017F, 'Latin Extended-A'],
-    [0x0180, 0x024F, 'Latin Extended-B'],
-    [0x2000, 0x206F, 'General Punctuation'],
-    [0x2070, 0x209F, 'Superscripts and Subscripts'],
-    [0x20A0, 0x20CF, 'Currency Symbols'],
-    [0x20D0, 0x20FF, 'Combining Diacritical Marks for Symbols'],
-    [0xE000, 0xF8FF, 'Private Use Area'],
-    [0xF900, 0xFAFF, 'CJK Compatibility Ideographs'],
-    [0xFE00, 0xFE0F, 'Variation Selectors'],
-    [0xFE10, 0xFE1F, 'Vertical Forms'],
-    [0xFE20, 0xFE2F, 'Combining Half Marks'],
-    [0xFE30, 0xFE4F, 'CJK Compatibility Forms'],
-    [0xFE50, 0xFE6F, 'Small Form Variants'],
-    [0xFE70, 0xFEFF, 'Arabic Presentation Forms-B'],
-    [0xFFF0, 0xFFFF, 'Specials'],
+    [0x0000, 0x001f, 'Control Character'],
+    [0x007f, 0x009f, 'Control Character'],
+    [0x2000, 0x206f, 'General Punctuation'],
+    [0xe000, 0xf8ff, 'Private Use Character'],
+    [0xfff0, 0xffff, 'Special'],
+    [0xf0000, 0x10ffff, 'Private Use Character']
 ];
 
-/**
- * Gets the Unicode name and code point for a character
- * @param code Unicode code point value
- * @returns Formatted string with code point and name
- */
-export const getUnicodeCodeName = (code: number): string => {
-    const codeHex = code.toString(16).toUpperCase().padStart(4, '0');
-    const unicodeName = UNICODE_NAMES[code];
-
-    if (unicodeName) {
-        return `${unicodeName} (U+${codeHex})`;
+const describeRange = (codePoint: number): string | undefined => {
+    if (codePoint >= 0xfe00 && codePoint <= 0xfe0f) {
+        return `Variation Selector-${codePoint - 0xfe00 + 1}`;
     }
-
-    // Try to identify the range this character belongs to
-    for (const [start, end, name] of UNICODE_RANGES) {
-        if (code >= start && code <= end) {
-            return `${name} (U+${codeHex})`;
-        }
+    if (codePoint >= 0xe0100 && codePoint <= 0xe01ef) {
+        return `Variation Selector-${codePoint - 0xe0100 + 17}`;
     }
-
-    // Simple fallback for completely unknown characters
-    return `U+${codeHex}`;
+    // Tag characters mirror ASCII, which is how they are used to smuggle invisible text.
+    if (codePoint >= 0xe0020 && codePoint <= 0xe007e) {
+        const ascii = String.fromCharCode(codePoint - 0xe0000);
+        return ascii === ' ' ? 'Tag Space' : `Tag "${ascii}"`;
+    }
+    return UNICODE_RANGES.find(([start, end]) => codePoint >= start && codePoint <= end)?.[2];
 };
 
+/**
+ * Formats a code point as a readable label, such as "Zero Width Space (U+200B)".
+ */
+export const describeCodePoint = (codePoint: number): string => {
+    const hex = `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')}`;
+    const name = UNICODE_NAMES[codePoint] ?? describeRange(codePoint);
+    return name ? `${name} (${hex})` : hex;
+};

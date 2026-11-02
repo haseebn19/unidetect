@@ -1,30 +1,15 @@
 .result-container {
-    position: relative;
-    z-index: 1;
     background: var(--surface);
     padding: 1rem;
     border-radius: var(--radius);
     border: 1px solid var(--line);
     text-align: left;
     min-height: 120px;
-    color: var(--text);
     font-size: 0.9rem;
     line-height: 1.6;
-    width: 100%;
     white-space: pre-wrap;
-    word-wrap: break-word;
     overflow-wrap: break-word;
     font-family: var(--font-mono);
-    overflow-x: auto;
-    max-width: 100%;
-    -webkit-overflow-scrolling: touch;
-}
-
-.result-container span {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    font-family: inherit;
 }
 
 .hidden-char {
@@ -42,7 +27,10 @@
     min-width: 24px;
     height: 24px;
     border-radius: 4px;
-    transition: all var(--transition);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background-color var(--transition);
     user-select: none;
 }
 
@@ -76,24 +64,23 @@
     background-color: rgba(255, 255, 255, 0.2);
 }
 
-.hidden-char:active span {
-    transform: translateY(0);
-}
-
 .hidden-char:hover::after {
-    content: attr(title);
-    position: fixed;
+    content: attr(aria-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
     background-color: #222;
     color: var(--text);
     padding: 8px 12px;
     border-radius: 6px;
+    font-family: var(--font);
     font-size: 0.875rem;
     white-space: nowrap;
     z-index: 50;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     pointer-events: none;
-    transform: translate(-50%, -100%);
-    margin-top: -8px;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
 }
 
 .summary-container {
@@ -101,6 +88,7 @@
     border-radius: var(--radius);
     padding: 1rem;
     margin-top: 2rem;
+    text-align: left;
     backdrop-filter: blur(10px);
     max-height: 60vh;
     overflow-y: auto;
@@ -124,60 +112,17 @@
     background: rgba(255, 255, 255, 0.4);
 }
 
-.summary-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: background-color var(--transition);
-}
-
-.summary-header:hover {
-    background: var(--surface-hover);
-}
-
-.summary-header h3 {
-    margin: 0;
+.summary-heading {
     font-size: 1.25rem;
+}
+
+.summary-heading .summary-header > span:first-child {
     flex: 1;
 }
 
-.summary-toggle {
-    color: var(--text);
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.25rem;
-    line-height: 1;
-    opacity: 0.8;
-    transition: all var(--transition);
-    transform-origin: center;
-}
-
-.summary-toggle.expanded {
-    transform: rotate(180deg);
-}
-
 .summary-content {
-    overflow: hidden;
-    max-height: 0;
-    opacity: 0;
-    transition: all 0.3s ease-out;
-}
-
-.summary-content.expanded {
-    max-height: none;
-    opacity: 1;
-    padding-top: 1rem;
-}
-
-.summary-container ul {
     list-style: none;
-    padding: 0;
-    margin: 0;
+    padding-top: 1rem;
 }
 
 .summary-container li {
@@ -186,14 +131,16 @@
     border-radius: 6px;
     margin-bottom: 0.5rem;
     font-size: 0.9rem;
-    transition: all var(--transition);
+    transition:
+        background-color var(--transition),
+        transform var(--transition);
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
 .summary-container li::before {
-    content: '⚠';
+    content: '⚠' / '';
     display: inline-block;
     background-color: var(--warning);
     color: #000;
@@ -202,26 +149,9 @@
     font-weight: bold;
 }
 
-.summary-container li.newline::before {
-    content: '↵';
-    background-color: rgba(255, 255, 255, 0.15);
-    color: var(--text-soft);
-    font-weight: normal;
-}
-
 .summary-container li:hover {
     background: var(--surface-hover);
     transform: translateX(4px);
-}
-
-.hidden-char-group {
-    display: inline-flex;
-    gap: 2px;
-    margin: 0 2px;
-}
-
-.hidden-char-group .hidden-char {
-    margin: 0;
 }
 
 @media (min-width: 768px) {

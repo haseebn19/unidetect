@@ -1,95 +1,69 @@
-import {useState, useCallback} from 'react';
-import {extractTextFromFile} from '../utils/fileExtraction';
-import {MessageType} from '../types';
+import {useCallback, useMemo, useState} from 'react';
+import type {DragEvent} from 'react';
+import type {MessageType} from '../types';
+import {extractTextFromFile, FileReadError} from '../utils/fileExtraction';
 
 /**
- * Result type for the file extraction hook
+ * Loads text from dropped or selected files and tracks drag state for the drop zone. The text
+ * goes to `onText`, and `showMessage` reports success or why a file could not be read.
  */
-interface UseFileExtractionResult {
-    isExtracting: boolean;
-    isDragging: boolean;
-    statusMessage: string;
-    messageType: MessageType;
-    handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-    handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
-    handleDrop: (e: React.DragEvent<HTMLDivElement>, onSuccess: (text: string) => void) => void;
-    extractFromFile: (file: File, onSuccess: (text: string) => void) => Promise<void>;
-}
+export const useFileExtraction = (
+    onText: (text: string) => void,
+    showMessage: (text: string, type: MessageType) => void
+) => {
+    const [isExtracting, setIsExtracting] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
-/**
- * Hook for handling file text extraction and drag-and-drop functionality
- * @returns Object containing file extraction state and handlers
- */
-export const useFileExtraction = (): UseFileExtractionResult => {
-    const [isExtracting, setIsExtracting] = useState<boolean>(false);
-    const [isDragging, setIsDragging] = useState<boolean>(false);
-    const [statusMessage, setStatusMessage] = useState<string>('');
-    const [messageType, setMessageType] = useState<MessageType>('info');
+    const loadFile = useCallback(
+        async (file: File) => {
+            setIsExtracting(true);
+            try {
+                onText(await extractTextFromFile(file));
+                showMessage(`Loaded "${file.name}".`, 'success');
+            } catch (error) {
+                if (error instanceof FileReadError) {
+                    showMessage(error.message, 'error');
+                } else {
+                    console.error(error);
+                    showMessage(`Could not read "${file.name}".`, 'error');
+                }
+            } finally {
+                setIsExtracting(false);
+            }
+        },
+        [onText, showMessage]
+    );
 
-    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    }, []);
+    const dragHandlers = useMemo(
+        () => ({
+            onDragOver: (event: DragEvent<HTMLElement>) => {
+                event.preventDefault();
+                setIsDragging(true);
+            },
+            onDragLeave: (event: DragEvent<HTMLElement>) => {
+                // Moving between child elements fires dragleave on the parent; ignore those.
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setIsDragging(false);
+                }
+            },
+            onDrop: (event: DragEvent<HTMLElement>) => {
+                event.preventDefault();
+                setIsDragging(false);
 
-    const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    }, []);
+                const [file] = Array.from(event.dataTransfer.files);
+                if (file) {
+                    void loadFile(file);
+                    return;
+                }
 
-    const extractFromFile = async (file: File, onSuccess: (text: string) => void) => {
-        setIsExtracting(true);
-        try {
-            const extractedText = await extractTextFromFile(file);
-            onSuccess(extractedText);
-            setMessageType('success');
-            setStatusMessage(`File "${file.name}" loaded successfully`);
-        } catch (error) {
-            console.error('Error extracting text from file:', error);
-            setMessageType('error');
-            setStatusMessage(`Could not extract text from "${file.name}". Try copying the text directly.`);
-        } finally {
-            setIsExtracting(false);
-            setTimeout(() => {
-                setStatusMessage('');
-            }, 3000);
-        }
-    };
+                const droppedText = event.dataTransfer.getData('text');
+                if (droppedText) {
+                    onText(droppedText);
+                }
+            }
+        }),
+        [loadFile, onText]
+    );
 
-    const handleDrop = useCallback((
-        e: React.DragEvent<HTMLDivElement>,
-        onSuccess: (text: string) => void
-    ) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) {
-            extractFromFile(files[0], onSuccess);
-            return;
-        }
-
-        const text = e.dataTransfer.getData('text');
-        if (text) {
-            onSuccess(text);
-            setMessageType('success');
-            setStatusMessage('Text dropped successfully');
-            setTimeout(() => {
-                setStatusMessage('');
-            }, 3000);
-        }
-    }, []);
-
-    return {
-        isExtracting,
-        isDragging,
-        statusMessage,
-        messageType,
-        handleDragOver,
-        handleDragLeave,
-        handleDrop,
-        extractFromFile
-    };
+    return {isExtracting, isDragging, dragHandlers, loadFile};
 };

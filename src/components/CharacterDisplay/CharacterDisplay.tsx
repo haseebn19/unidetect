@@ -1,132 +1,86 @@
-import React, {useCallback, useState, memo} from 'react';
-import {HiddenChar} from '../../types';
+import {memo, useMemo, useState} from 'react';
+import type {ReactNode} from 'react';
+import type {HiddenChar} from '../../types';
+import {plural} from '../../utils/plural';
 import './CharacterDisplay.css';
 
-/**
- * Props for the CharacterDisplay component
- */
 interface CharacterDisplayProps {
     text: string;
     hiddenChars: HiddenChar[];
 }
 
+const markerFor = ({type, char}: HiddenChar): string => {
+    if (type === 'newline') return char === '\r' ? '↵' : '⏎';
+    if (type === 'tab') return '↹';
+    return '⚠';
+};
+
 /**
- * Component for displaying text with highlighted characters
- * Shows hidden characters and newlines with visual indicators
+ * Splits text into plain runs and markers, one marker per hidden character, line break, or tab.
+ * Indexes are code point positions, so the text is split with Array.from rather than by UTF-16 unit.
  */
-const CharacterDisplayComponent: React.FC<CharacterDisplayProps> = ({text, hiddenChars}) => {
+const renderHighlightedText = (text: string, hiddenChars: HiddenChar[]): ReactNode[] => {
+    const chars = Array.from(text);
+    const parts: ReactNode[] = [];
+    let lastIndex = 0;
+
+    hiddenChars.forEach((current, i) => {
+        if (current.index > lastIndex) {
+            parts.push(<span key={`text-${i}`}>{chars.slice(lastIndex, current.index).join('')}</span>);
+        }
+        parts.push(
+            <span key={`mark-${i}`} className={`hidden-char ${current.type}`} role="img" aria-label={current.label}>
+                <span>{markerFor(current)}</span>
+            </span>
+        );
+        if (current.char === '\n') {
+            parts.push(<br key={`br-${i}`} />);
+        }
+        lastIndex = current.index + 1;
+    });
+
+    if (lastIndex < chars.length) {
+        parts.push(<span key="text-end">{chars.slice(lastIndex).join('')}</span>);
+    }
+
+    return parts;
+};
+
+/**
+ * Shows the analyzed text with hidden characters marked, followed by a list of every hidden character.
+ */
+const CharacterDisplayComponent = ({text, hiddenChars}: CharacterDisplayProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
-
-    const onlyHiddenChars = React.useMemo(() =>
-        hiddenChars.filter(char => char.type === 'hidden'),
-        [hiddenChars]
-    );
-
-    const hiddenCount = onlyHiddenChars.length;
-
-    const toggleExpanded = useCallback(() => {
-        setIsExpanded(prev => !prev);
-    }, []);
-
-    /**
-     * Renders text content with highlighted characters
-     * Processes text sequentially to maintain proper character positions
-     */
-    const renderText = useCallback(() => {
-        if (!text) return null;
-
-        const result = [];
-        const chars = Array.from(text);
-        let lastIndex = 0;
-
-        for (let i = 0; i < hiddenChars.length; i++) {
-            const current = hiddenChars[i];
-
-            if (current.index > lastIndex) {
-                const textContent = chars.slice(lastIndex, current.index).join('');
-                result.push(
-                    <span key={`text-${i}`}>
-                        {textContent}
-                    </span>
-                );
-            }
-
-            result.push(
-                <span
-                    key={`hidden-${i}`}
-                    className={`hidden-char ${current.type}`}
-                    title={`${current.code}`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Hidden character at position ${current.index + 1}: ${current.code}`}
-                >
-                    <span>
-                        {current.type === 'newline'
-                            ? (current.char === '\r' ? '↵' : '⏎')
-                            : current.type === 'tab'
-                                ? '↹'  // Tab symbol
-                                : '⚠'}
-                    </span>
-                </span>
-            );
-
-            if (current.type === 'newline' && current.char === '\n') {
-                result.push(<br key={`br-${i}`} />);
-            }
-
-            lastIndex = current.index + 1;
-        }
-
-        if (lastIndex < chars.length) {
-            const textContent = chars.slice(lastIndex).join('');
-            result.push(
-                <span key="text-end">
-                    {textContent}
-                </span>
-            );
-        }
-
-        return result;
-    }, [text, hiddenChars]);
+    const highlightedText = useMemo(() => renderHighlightedText(text, hiddenChars), [text, hiddenChars]);
+    const hiddenOnly = useMemo(() => hiddenChars.filter((char) => char.type === 'hidden'), [hiddenChars]);
 
     return (
         <>
-            <div className="result-container">
-                {renderText() || 'Paste some text to analyze...'}
-            </div>
-            {hiddenCount > 0 && (
-                <div className="summary-container">
-                    <div
-                        className="summary-header"
-                        onClick={toggleExpanded}
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={isExpanded}
-                        aria-controls="character-summary-list"
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                toggleExpanded();
-                            }
-                        }}
-                    >
-                        <h3>Found {hiddenCount} hidden character{hiddenCount === 1 ? '' : 's'}</h3>
+            <div className="result-container">{text ? highlightedText : 'Paste some text to analyze...'}</div>
+            {hiddenOnly.length > 0 && (
+                <section className="summary-container">
+                    <h2 className="summary-heading">
                         <button
-                            className={`summary-toggle ${isExpanded ? 'expanded' : ''}`}
-                            aria-label={isExpanded ? 'Collapse list' : 'Expand list'}
+                            type="button"
+                            className="summary-header"
+                            aria-expanded={isExpanded}
+                            aria-controls="character-summary-list"
+                            onClick={() => setIsExpanded((expanded) => !expanded)}
                         >
-                            ▼
+                            <span>Found {plural(hiddenOnly.length, 'hidden character')}</span>
+                            <span className={`summary-toggle ${isExpanded ? 'expanded' : ''}`} aria-hidden="true">
+                                ▼
+                            </span>
                         </button>
-                    </div>                    <div className={`summary-content ${isExpanded ? 'expanded' : ''}`}>
-                        <ul id="character-summary-list">
-                            {onlyHiddenChars.map((char, index) => (
-                                <li key={index} className={char.type}>
-                                    Position {char.index + 1}: {char.code}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
+                    </h2>
+                    <ul id="character-summary-list" className="summary-content" hidden={!isExpanded}>
+                        {hiddenOnly.map((char) => (
+                            <li key={char.index}>
+                                Position {char.index + 1}: {char.label}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             )}
         </>
     );
