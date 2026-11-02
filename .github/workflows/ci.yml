@@ -4,13 +4,13 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '24.x'
 
 jobs:
-  # ==========================================================================
-  # LINT JOB
-  # ==========================================================================
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -22,18 +22,13 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - run: npm ci
-
       - run: npm run lint
+      - run: npm run format:check
+      - run: npm run type-check
 
-      - name: Run type checking
-        run: npm run type-check
-
-  # ==========================================================================
-  # TEST JOB
-  # ==========================================================================
   test:
     name: Test with Coverage
     runs-on: ubuntu-latest
@@ -45,20 +40,10 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - run: npm ci
-
-      - name: Run Tests
-        run: npm run test:coverage
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-final.json
-          fail_ci_if_error: false
-          verbose: true
+      - run: npm run test:coverage
 
       - name: Upload Coverage Report
         uses: actions/upload-artifact@v7
@@ -81,12 +66,7 @@ jobs:
           echo "| Branches | ${BRANCHES}% |" >> $GITHUB_STEP_SUMMARY
           echo "| Functions | ${FUNCTIONS}% |" >> $GITHUB_STEP_SUMMARY
           echo "| Lines | ${LINES}% |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Full report available as artifact: coverage-report" >> $GITHUB_STEP_SUMMARY
 
-  # ==========================================================================
-  # BUILD JOB
-  # ==========================================================================
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -99,15 +79,7 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: npm
 
       - run: npm ci
-
       - run: npm run build
-
-      - name: Upload Build
-        uses: actions/upload-artifact@v7
-        with:
-          name: build
-          path: dist/
-          retention-days: 7
