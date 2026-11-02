@@ -1,20 +1,16 @@
-import { defineConfig, mergeConfig } from 'vitest/config';
+import {defineConfig, mergeConfig} from 'vitest/config';
 import viteConfig from './vite.config.ts';
 
 export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/test/setup.ts',
-      include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-      coverage: {
-        provider: 'v8',
-        reporter: ['text', 'json', 'json-summary', 'lcov', 'html'],
-        exclude: ['node_modules/', 'src/test/', '**/*.test.ts', '**/*.d.ts'],
-        reportsDirectory: './coverage',
-      },
-    },
-  })
+    viteConfig,
+    defineConfig({
+        test: {
+            globals: true,
+            environment: 'jsdom',
+            setupFiles: './src/test/setup.ts',
+            coverage: {
+                reporter: ['text', 'html', 'json-summary']
+            }
+        }
+    })
 );
